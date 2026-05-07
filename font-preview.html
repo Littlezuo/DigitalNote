@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>字体预览工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            gap: 16px;
+        }
+
+        .input-panel {
+            flex: 0 0 300px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            align-self: flex-start;
+            position: sticky;
+            top: 16px;
+            max-height: calc(100vh - 32px);
+            overflow-y: auto;
+        }
+
+        .input-panel::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .input-panel::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 2px;
+        }
+
+        .input-panel h2 {
+            margin-bottom: 16px;
+            color: #333;
+            font-size: 17px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-panel h2::before {
+            content: '';
+            width: 4px;
+            height: 18px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: #764ba2;
+            margin: 14px 0 8px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #f0e6ff;
+        }
+
+        .form-group {
+            margin-bottom: 10px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 3px;
+            color: #555;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        textarea {
+            width: 100%;
+            height: 80px;
+            padding: 8px;
+            border: 1px solid #e0d6f0;
+            border-radius: 8px;
+            font-size: 14px;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+        }
+
+        select, input[type="color"], input[type="number"] {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #e0d6f0;
+            border-radius: 8px;
+            font-size: 13px;
+            transition: border-color 0.2s;
+            background: #fff;
+        }
+
+        select:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #764ba2;
+            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+        }
+
+        input[type="color"] {
+            height: 34px;
+            cursor: pointer;
+            padding: 3px;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            padding: 0;
+            border: none;
+            height: 6px;
+            -webkit-appearance: none;
+            appearance: none;
+            background: #e0d6f0;
+            border-radius: 3px;
+            outline: none;
+            margin-top: 4px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .btn-upload {
+            display: block;
+            width: 100%;
+            padding: 8px;
+            border: 1px dashed #b39ddb;
+            border-radius: 8px;
+            background: #f8f4ff;
+            color: #764ba2;
+            font-size: 12px;
+            cursor: pointer;
+            text-align: center;
+            transition: background 0.2s;
+        }
+
+        .btn-upload:hover {
+            background: #ede7f6;
+        }
+
+        .btn-remove-logo {
+            display: none;
+            width: 100%;
+            padding: 6px;
+            border: none;
+            border-radius: 8px;
+            background: #ffebee;
+            color: #c62828;
+            font-size: 12px;
+            cursor: pointer;
+            margin-top: 6px;
+        }
+
+        .btn-remove-logo:hover {
+            background: #ffcdd2;
+        }
+
+        .preview-panel {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .preview-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 10px 16px;
+            border-radius: 16px 16px 0 0;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        }
+
+        .preview-header h2 {
+            color: #333;
+            margin: 0;
+            font-size: 15px;
+        }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .zoom-controls button {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            cursor: pointer;
+            font-size: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s, opacity 0.2s;
+        }
+
+        .zoom-controls button:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+
+        .zoom-controls button:active {
+            transform: scale(0.95);
+        }
+
+        .zoom-controls span {
+            font-size: 11px;
+            color: #666;
+            min-width: 34px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .preview-area {
+            border-radius: 0 0 16px 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+            position: relative;
+            background: #1a1a2e;
+            max-height: calc(100vh - 100px);
+        }
+
+        .preview-bg-wrapper {
+            width: 100%;
+            max-height: calc(100vh - 100px);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .preview-bg-img {
+            display: block;
+            transform-origin: center center;
+        }
+
+        .preview-bg-default {
+            width: 100%;
+            height: 0;
+            padding-bottom: 50%;
+            background: #666;
+        }
+
+        .fit-contain .preview-bg-img {
+            width: 100%;
+            height: auto;
+            max-height: calc(100vh - 100px);
+            object-fit: contain;
+        }
+
+        .fit-cover .preview-bg-img {
+            width: 100%;
+            height: calc(100vh - 100px);
+            object-fit: cover;
+        }
+
+        .fit-fill .preview-bg-img {
+            width: 100%;
+            height: calc(100vh - 100px);
+            object-fit: fill;
+        }
+
+        .fit-width .preview-bg-img {
+            width: 100%;
+            height: auto;
+        }
+
+        .preview-text-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        .preview-text {
+            font-family: "STXingkai", "华文行楷", cursive;
+            color: white;
+            font-size: 24px;
+            text-align: center;
+            white-space: pre-wrap;
+            word-break: break-all;
+            padding: 20px;
+            position: absolute;
+            cursor: grab;
+            user-select: none;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .preview-text.dragging {
+            cursor: grabbing;
+        }
+
+        /* Logo */
+        .preview-logo {
+            position: absolute;
+            cursor: grab;
+            user-select: none;
+            display: none;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .preview-logo:hover {
+            border-color: rgba(102, 126, 234, 0.6);
+        }
+
+        .preview-logo.active {
+            border: 2px dashed #667eea;
+        }
+
+        .preview-logo.dragging {
+            cursor: grabbing;
+            border: 2px dashed #764ba2;
+        }
+
+        .preview-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            pointer-events: none;
+        }
+
+        /* Logo 四角缩放手柄 */
+        .resize-handle {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #667eea;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            display: none;
+            z-index: 10;
+        }
+
+        .preview-logo.active .resize-handle {
+            display: block;
+        }
+
+        .resize-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
+        .resize-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
+        .resize-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
+        .resize-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
+
+        /* Word 艺术字样式 */
+        .wordart-none {}
+
+        .wordart-gradient-blue {
+            background: linear-gradient(180deg, #1e90ff 0%, #00008b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));
+        }
+
+        .wordart-gradient-gold {
+            background: linear-gradient(180deg, #ffd700 0%, #b8860b 50%, #ffd700 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.4));
+        }
+
+        .wordart-gradient-rainbow {
+            background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .wordart-outline-black {
+            -webkit-text-stroke: 2px #333;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .wordart-outline-shadow {
+            -webkit-text-stroke: 1px #fff;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(3px 3px 0 rgba(0,0,0,0.5));
+        }
+
+        .wordart-shadow-deep {
+            color: #fff;
+            text-shadow:
+                0 1px 0 #ccc,
+                0 2px 0 #c9c9c9,
+                0 3px 0 #bbb,
+                0 4px 0 #b9b9b9,
+                0 5px 0 #aaa,
+                0 6px 1px rgba(0,0,0,.1),
+                0 0 5px rgba(0,0,0,.1),
+                0 1px 3px rgba(0,0,0,.3),
+                0 3px 5px rgba(0,0,0,.2),
+                0 5px 10px rgba(0,0,0,.25);
+        }
+
+        .wordart-chrome {
+            background: linear-gradient(180deg, #e8e8e8 0%, #999 25%, #fff 50%, #999 75%, #e8e8e8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.5));
+        }
+
+        .wordart-fire {
+            background: linear-gradient(180deg, #fff 0%, #ff0 20%, #f80 50%, #f00 80%, #800 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 4px rgba(255,100,0,0.6));
+        }
+
+        .wordart-ice {
+            background: linear-gradient(180deg, #fff 0%, #a8d8ea 30%, #4fc3f7 60%, #0288d1 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(0 0 3px rgba(79,195,247,0.5));
+        }
+
+        .wordart-sunset {
+            background: linear-gradient(180deg, #ff6b6b 0%, #feca57 50%, #ff9ff3 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.3));
+        }
+
+        .wordart-emerald {
+            background: linear-gradient(180deg, #a8ff78 0%, #1fa2ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.3));
+        }
+
+        .wordart-rose-gold {
+            background: linear-gradient(180deg, #fceabb 0%, #e8a87c 50%, #d63384 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.3));
+        }
+
+        .wordart-neon {
+            color: #fff;
+            text-shadow:
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 20px #0ff,
+                0 0 40px #0ff,
+                0 0 80px #0ff;
+        }
+
+        .wordart-emboss {
+            color: #666;
+            text-shadow:
+                -1px -1px 1px rgba(255,255,255,0.8),
+                1px 1px 1px rgba(0,0,0,0.3);
+        }
+
+        .row-group {
+            display: flex;
+            gap: 8px;
+        }
+
+        .row-group .form-group {
+            flex: 1;
+        }
+
+        .drag-hint {
+            font-size: 11px;
+            color: rgba(255,255,255,0.7);
+            text-align: center;
+            padding: 5px;
+            background: rgba(0,0,0,0.3);
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+
+        /* ===== 手机端响应式 ===== */
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                flex-direction: column-reverse;
+                gap: 12px;
+            }
+
+            .input-panel {
+                flex: none;
+                width: 100%;
+                position: static;
+                max-height: none;
+                padding: 16px;
+                border-radius: 12px;
+                order: 2;
+            }
+
+            .preview-panel {
+                min-width: 0;
+                width: 100%;
+                order: 1;
+            }
+
+            .preview-header {
+                border-radius: 12px 12px 0 0;
+                padding: 8px 12px;
+            }
+
+            .preview-area {
+                border-radius: 0 0 12px 12px;
+                max-height: 55vh;
+            }
+
+            .preview-bg-wrapper {
+                max-height: 55vh;
+            }
+
+            .fit-contain .preview-bg-img {
+                max-height: 55vh;
+            }
+
+            .fit-cover .preview-bg-img,
+            .fit-fill .preview-bg-img {
+                height: 55vh;
+            }
+
+            .preview-text {
+                font-size: 20px;
+                padding: 12px;
+            }
+
+            textarea {
+                height: 60px;
+            }
+
+            .row-group {
+                gap: 6px;
+            }
+
+            .section-title {
+                margin: 10px 0 6px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .preview-text {
+                font-size: 18px;
+            }
+
+            .zoom-controls button {
+                width: 24px;
+                height: 24px;
+                font-size: 13px;
+            }
+
+            .preview-header h2 {
+                font-size: 13px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="input-panel">
+            <h2>字体预览工具</h2>
+
+            <div class="form-group">
+                <label for="textInput">输入文字</label>
+                <textarea id="textInput" placeholder="请输入要预览的文字...">DADA
+最佳定制</textarea>
+            </div>
+
+            <div class="section-title">字体设置</div>
+
+            <div class="form-group">
+                <label for="fontSelect">字体</label>
+                <select id="fontSelect">
+                    <option value="'STXingkai', '华文行楷', cursive">华文行楷</option>
+                    <option value="'STKaiti', '华文楷体', cursive">华文楷体</option>
+                    <option value="'STSong', '华文宋体', serif">华文宋体</option>
+                    <option value="'STFangsong', '华文仿宋', serif">华文仿宋</option>
+                    <option value="'STLiti', '华文隶书', cursive">华文隶书</option>
+                    <option value="'SimHei', '黑体', sans-serif">黑体</option>
+                    <option value="'SimSun', '宋体', serif">宋体</option>
+                    <option value="'KaiTi', '楷体', cursive">楷体</option>
+                    <option value="'FangSong', '仿宋', serif">仿宋</option>
+                    <option value="'Microsoft YaHei', '微软雅黑', sans-serif">微软雅黑</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="artStyle">艺术字样式</label>
+                <select id="artStyle">
+                    <option value="wordart-none">无（使用文字颜色）</option>
+                    <option value="wordart-gradient-blue">渐变蓝</option>
+                    <option value="wordart-gradient-gold" selected>渐变金</option>
+                    <option value="wordart-gradient-rainbow">彩虹</option>
+                    <option value="wordart-chrome">金属银</option>
+                    <option value="wordart-fire">烈焰红</option>
+                    <option value="wordart-ice">冰蓝</option>
+                    <option value="wordart-sunset">日落橙粉</option>
+                    <option value="wordart-emerald">翡翠绿</option>
+                    <option value="wordart-rose-gold">玫瑰金</option>
+                    <option value="wordart-neon">霓虹</option>
+                    <option value="wordart-shadow-deep">立体阴影</option>
+                    <option value="wordart-outline-black">黑色描边</option>
+                    <option value="wordart-outline-shadow">描边投影</option>
+                    <option value="wordart-emboss">浮雕</option>
+                </select>
+            </div>
+
+            <div class="row-group">
+                <div class="form-group">
+                    <label for="fontSize">字号 (px)</label>
+                    <input type="number" id="fontSize" value="24" min="12" max="200">
+                </div>
+                <div class="form-group">
+                    <label for="fontColor">颜色</label>
+                    <input type="color" id="fontColor" value="#ffffff">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>字间距: <span id="letterSpacingVal">0px</span></label>
+                <input type="range" id="letterSpacing" min="0" max="30" value="0" step="1">
+            </div>
+
+            <div class="form-group">
+                <label>行间距: <span id="lineHeightVal">1.1</span></label>
+                <input type="range" id="lineHeight" min="1" max="4" value="1.1" step="0.1">
+            </div>
+
+            <div class="row-group">
+                <div class="form-group">
+                    <label for="textAlign">对齐</label>
+                    <select id="textAlign">
+                        <option value="center" selected>居中</option>
+                        <option value="left">左对齐</option>
+                        <option value="right">右对齐</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="direction">方向</label>
+                    <select id="direction">
+                        <option value="horizontal" selected>横向</option>
+                        <option value="vertical">竖向</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-title">LOGO 设置</div>
+
+            <div class="form-group">
+                <label class="btn-upload" for="logoInput" id="logoUploadLabel">
+                    <span id="logoUploadText">点击上传 LOGO 图片</span>
+                </label>
+                <input type="file" id="logoInput" accept="image/*" style="display:none">
+                <button class="btn-remove-logo" id="logoRemoveBtn">移除 LOGO</button>
+            </div>
+
+            <div class="form-group" id="logoSizeGroup" style="display:none">
+                <label>LOGO 大小: <span id="logoSizeVal">80px</span></label>
+                <input type="range" id="logoSize" min="30" max="300" value="80" step="5">
+            </div>
+
+            <div class="section-title">背景设置</div>
+
+            <div class="form-group">
+                <label class="btn-upload" for="bgInput" id="bgUploadLabel">
+                    <span id="bgUploadText">上传背景图片</span>
+                </label>
+                <input type="file" id="bgInput" accept="image/*" style="display:none">
+                <button class="btn-remove-logo" id="bgRemoveBtn" style="display:none">恢复默认灰色背景</button>
+            </div>
+
+            <div class="form-group">
+                <label for="fitMode">填充方式</label>
+                <select id="fitMode">
+                    <option value="fit-contain" selected>自适应（完整显示）</option>
+                    <option value="fit-cover">覆盖（裁切填满）</option>
+                    <option value="fit-fill">拉伸（铺满区域）</option>
+                    <option value="fit-width">按宽度适应</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="preview-panel">
+            <div class="preview-header">
+                <h2>预览效果</h2>
+                <div class="zoom-controls">
+                    <button id="zoomOut" title="缩小">−</button>
+                    <span id="zoomLevel">100%</span>
+                    <button id="zoomIn" title="放大">+</button>
+                    <button id="zoomReset" style="width: auto; padding: 0 8px; font-size: 11px;" title="重置">重置</button>
+                </div>
+            </div>
+            <div class="preview-area" id="previewArea">
+                <div class="preview-bg-wrapper fit-contain" id="bgWrapper">
+                    <div class="preview-bg-default" id="bgDefault"></div>
+                    <img class="preview-bg-img" id="bgImg" src="" alt="背景图" style="display:none">
+                    <div class="preview-text-overlay" id="textOverlay">
+                        <div class="preview-text wordart-gradient-gold" id="previewText">春风得意马蹄疾
+一日看尽长安花</div>
+                        <div class="preview-logo" id="previewLogo">
+                            <img id="logoImg" src="" alt="LOGO">
+                            <div class="resize-handle nw" data-dir="nw"></div>
+                            <div class="resize-handle ne" data-dir="ne"></div>
+                            <div class="resize-handle sw" data-dir="sw"></div>
+                            <div class="resize-handle se" data-dir="se"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="drag-hint">拖拽文字/LOGO可调整位置</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const textInput = document.getElementById('textInput');
+        const fontSelect = document.getElementById('fontSelect');
+        const fontSize = document.getElementById('fontSize');
+        const fontColor = document.getElementById('fontColor');
+        const textAlign = document.getElementById('textAlign');
+        const direction = document.getElementById('direction');
+        const letterSpacing = document.getElementById('letterSpacing');
+        const lineHeight = document.getElementById('lineHeight');
+        const artStyle = document.getElementById('artStyle');
+        const fitMode = document.getElementById('fitMode');
+        const previewText = document.getElementById('previewText');
+        const bgImg = document.getElementById('bgImg');
+        const bgDefault = document.getElementById('bgDefault');
+        const bgWrapper = document.getElementById('bgWrapper');
+        const textOverlay = document.getElementById('textOverlay');
+        const zoomInBtn = document.getElementById('zoomIn');
+        const zoomOutBtn = document.getElementById('zoomOut');
+        const zoomResetBtn = document.getElementById('zoomReset');
+        const zoomLevel = document.getElementById('zoomLevel');
+
+        const logoInput = document.getElementById('logoInput');
+        const logoUploadText = document.getElementById('logoUploadText');
+        const logoRemoveBtn = document.getElementById('logoRemoveBtn');
+        const logoSize = document.getElementById('logoSize');
+        const logoSizeGroup = document.getElementById('logoSizeGroup');
+        const previewLogo = document.getElementById('previewLogo');
+        const logoImg = document.getElementById('logoImg');
+
+        const bgInput = document.getElementById('bgInput');
+        const bgUploadText = document.getElementById('bgUploadText');
+        const bgRemoveBtn = document.getElementById('bgRemoveBtn');
+
+        let currentZoom = 100;
+
+        // 文字拖拽
+        let isTextDragging = false;
+        let textDragStartX, textDragStartY;
+        let textPosX = 50, textPosY = 50;
+
+        // Logo 拖拽
+        let isLogoDragging = false;
+        let logoDragStartX, logoDragStartY;
+        let logoPosX = 50, logoPosY = 20;
+
+        function updateBgImageOptions() {}
+
+        function updateBgSrc() {}
+
+        // === 背景图上传 ===
+        function setBgImage(dataUrl) {
+            bgImg.src = dataUrl;
+            bgImg.style.display = 'block';
+            bgDefault.style.display = 'none';
+            bgRemoveBtn.style.display = 'block';
+            bgUploadText.textContent = '更换背景图片';
+        }
+
+        function removeBgImage() {
+            bgImg.src = '';
+            bgImg.style.display = 'none';
+            bgDefault.style.display = 'block';
+            bgRemoveBtn.style.display = 'none';
+            bgUploadText.textContent = '上传背景图片';
+            try { localStorage.removeItem('bgImageData'); } catch(e) {}
+        }
+
+        bgInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                setBgImage(ev.target.result);
+                // 尝试存储到 localStorage
+                try { localStorage.setItem('bgImageData', ev.target.result); } catch(e) {}
+            };
+            reader.readAsDataURL(file);
+        });
+
+        bgRemoveBtn.addEventListener('click', removeBgImage);
+
+        // 页面加载时尝试恢复背景图
+        try {
+            const savedBg = localStorage.getItem('bgImageData');
+            if (savedBg) { setBgImage(savedBg); }
+        } catch(e) {}
+
+        function updateZoom(delta) {
+            currentZoom = Math.max(50, Math.min(200, currentZoom + delta));
+            zoomLevel.textContent = currentZoom + '%';
+            bgImg.style.transform = 'scale(' + (currentZoom / 100) + ')';
+        }
+
+        function updateFitMode() {
+            bgWrapper.className = 'preview-bg-wrapper ' + fitMode.value;
+        }
+
+        function updateTextPosition() {
+            previewText.style.left = textPosX + '%';
+            previewText.style.top = textPosY + '%';
+            previewText.style.transform = 'translate(-50%, -50%)';
+        }
+
+        function updateLogoPosition() {
+            previewLogo.style.left = logoPosX + '%';
+            previewLogo.style.top = logoPosY + '%';
+            previewLogo.style.transform = 'translate(-50%, -50%)';
+        }
+
+        function updateLogoSize() {
+            const size = logoSize.value;
+            previewLogo.style.width = size + 'px';
+            previewLogo.style.height = size + 'px';
+            document.getElementById('logoSizeVal').textContent = size + 'px';
+        }
+
+        function updatePreview() {
+            previewText.textContent = textInput.value;
+            previewText.style.fontFamily = fontSelect.value;
+            previewText.style.fontSize = fontSize.value + 'px';
+            previewText.style.letterSpacing = letterSpacing.value + 'px';
+            previewText.style.lineHeight = lineHeight.value;
+            previewText.style.textAlign = textAlign.value;
+
+            document.getElementById('letterSpacingVal').textContent = letterSpacing.value + 'px';
+            document.getElementById('lineHeightVal').textContent = lineHeight.value;
+
+            const artClass = artStyle.value;
+            previewText.className = 'preview-text ' + artClass;
+
+            if (artClass === 'wordart-none') {
+                previewText.style.color = fontColor.value;
+            } else {
+                previewText.style.color = '';
+            }
+
+            if (direction.value === 'vertical') {
+                previewText.style.writingMode = 'vertical-rl';
+                previewText.style.textOrientation = 'upright';
+            } else {
+                previewText.style.writingMode = 'horizontal-tb';
+                previewText.style.textOrientation = 'mixed';
+            }
+
+            updateTextPosition();
+        }
+
+        // === Logo 上传 ===
+        logoInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                logoImg.src = ev.target.result;
+                previewLogo.style.display = 'block';
+                logoRemoveBtn.style.display = 'block';
+                logoSizeGroup.style.display = 'block';
+                logoUploadText.textContent = '重新上传 LOGO';
+                updateLogoSize();
+                updateLogoPosition();
+                previewLogo.classList.add('active');
+            };
+            reader.readAsDataURL(file);
+        });
+
+        logoRemoveBtn.addEventListener('click', () => {
+            logoImg.src = '';
+            previewLogo.style.display = 'none';
+            previewLogo.classList.remove('active');
+            logoRemoveBtn.style.display = 'none';
+            logoSizeGroup.style.display = 'none';
+            logoUploadText.textContent = '点击上传 LOGO 图片';
+            logoInput.value = '';
+        });
+
+        logoSize.addEventListener('input', updateLogoSize);
+
+        // 点击 logo 激活/取消
+        previewLogo.addEventListener('click', (e) => {
+            if (e.target.classList.contains('resize-handle')) return;
+            previewLogo.classList.toggle('active');
+        });
+
+        // 点击其他区域取消 logo 激活
+        textOverlay.addEventListener('click', (e) => {
+            if (!previewLogo.contains(e.target)) {
+                previewLogo.classList.remove('active');
+            }
+        });
+
+        // === Logo 缩放手柄 ===
+        let isResizing = false;
+        let resizeStartX, resizeStartY, resizeStartW, resizeStartH;
+
+        document.querySelectorAll('.resize-handle').forEach(handle => {
+            handle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                startResize(e.clientX, e.clientY);
+            });
+            handle.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                startResize(e.touches[0].clientX, e.touches[0].clientY);
+            }, { passive: false });
+        });
+
+        function startResize(x, y) {
+            isResizing = true;
+            resizeStartX = x;
+            resizeStartY = y;
+            resizeStartW = parseInt(logoSize.value);
+        }
+
+        function moveResize(x, y) {
+            if (!isResizing) return;
+            const dx = x - resizeStartX;
+            const dy = y - resizeStartY;
+            const delta = Math.max(dx, dy);
+            const newSize = Math.max(30, Math.min(300, resizeStartW + delta));
+            logoSize.value = newSize;
+            updateLogoSize();
+        }
+
+        function endResize() {
+            isResizing = false;
+        }
+
+        // === 拖拽：文字 ===
+        function startTextDrag(x, y) {
+            isTextDragging = true;
+            previewText.classList.add('dragging');
+            textDragStartX = x;
+            textDragStartY = y;
+        }
+
+        function moveTextDrag(x, y) {
+            if (!isTextDragging) return;
+            const rect = textOverlay.getBoundingClientRect();
+            textPosX = Math.max(0, Math.min(100, textPosX + ((x - textDragStartX) / rect.width) * 100));
+            textPosY = Math.max(0, Math.min(100, textPosY + ((y - textDragStartY) / rect.height) * 100));
+            updateTextPosition();
+            textDragStartX = x;
+            textDragStartY = y;
+        }
+
+        function endTextDrag() {
+            isTextDragging = false;
+            previewText.classList.remove('dragging');
+        }
+
+        previewText.addEventListener('mousedown', (e) => { startTextDrag(e.clientX, e.clientY); e.preventDefault(); });
+        previewText.addEventListener('touchstart', (e) => { startTextDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, { passive: false });
+
+        // === 拖拽：Logo ===
+        function startLogoDrag(x, y) {
+            isLogoDragging = true;
+            previewLogo.classList.add('dragging');
+            logoDragStartX = x;
+            logoDragStartY = y;
+        }
+
+        function moveLogoDrag(x, y) {
+            if (!isLogoDragging) return;
+            const rect = textOverlay.getBoundingClientRect();
+            logoPosX = Math.max(0, Math.min(100, logoPosX + ((x - logoDragStartX) / rect.width) * 100));
+            logoPosY = Math.max(0, Math.min(100, logoPosY + ((y - logoDragStartY) / rect.height) * 100));
+            updateLogoPosition();
+            logoDragStartX = x;
+            logoDragStartY = y;
+        }
+
+        function endLogoDrag() {
+            isLogoDragging = false;
+            previewLogo.classList.remove('dragging');
+        }
+
+        previewLogo.addEventListener('mousedown', (e) => { startLogoDrag(e.clientX, e.clientY); e.preventDefault(); });
+        previewLogo.addEventListener('touchstart', (e) => { startLogoDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, { passive: false });
+
+        // === 全局 move/end ===
+        document.addEventListener('mousemove', (e) => { moveTextDrag(e.clientX, e.clientY); moveLogoDrag(e.clientX, e.clientY); moveResize(e.clientX, e.clientY); });
+        document.addEventListener('mouseup', () => { endTextDrag(); endLogoDrag(); endResize(); });
+        document.addEventListener('touchmove', (e) => {
+            const t = e.touches[0];
+            moveTextDrag(t.clientX, t.clientY);
+            moveLogoDrag(t.clientX, t.clientY);
+            moveResize(t.clientX, t.clientY);
+        }, { passive: true });
+        document.addEventListener('touchend', () => { endTextDrag(); endLogoDrag(); endResize(); });
+
+        // === 事件绑定 ===
+        textInput.addEventListener('input', updatePreview);
+        fontSelect.addEventListener('change', updatePreview);
+        fontSize.addEventListener('input', updatePreview);
+        fontColor.addEventListener('input', updatePreview);
+        textAlign.addEventListener('change', updatePreview);
+        direction.addEventListener('change', updatePreview);
+        letterSpacing.addEventListener('input', updatePreview);
+        lineHeight.addEventListener('input', updatePreview);
+        artStyle.addEventListener('change', updatePreview);
+        fitMode.addEventListener('change', updateFitMode);
+        zoomInBtn.addEventListener('click', () => updateZoom(10));
+        zoomOutBtn.addEventListener('click', () => updateZoom(-10));
+        zoomResetBtn.addEventListener('click', () => {
+            currentZoom = 100;
+            zoomLevel.textContent = '100%';
+            bgImg.style.transform = 'scale(1)';
+        });
+
+        // 初始化
+        updateTextPosition();
+        updatePreview();
+    </script>
+</body>
+</html>
