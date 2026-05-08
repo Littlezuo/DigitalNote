@@ -1054,15 +1054,26 @@
         }
 
         // === 拖拽：文字 ===
+        let textTouchStartX, textTouchStartY;
+        let textTouchMoved = false;
+
         function startTextDrag(x, y) {
             isTextDragging = true;
+            textTouchMoved = false;
             previewText.classList.add('dragging');
             textDragStartX = x;
             textDragStartY = y;
+            textTouchStartX = x;
+            textTouchStartY = y;
         }
 
         function moveTextDrag(x, y) {
             if (!isTextDragging) return;
+            const dx = x - textTouchStartX;
+            const dy = y - textTouchStartY;
+            if (!textTouchMoved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
+                textTouchMoved = true;
+            }
             const rect = textOverlay.getBoundingClientRect();
             textPosX = Math.max(0, Math.min(100, textPosX + ((x - textDragStartX) / rect.width) * 100));
             textPosY = Math.max(0, Math.min(100, textPosY + ((y - textDragStartY) / rect.height) * 100));
@@ -1072,15 +1083,13 @@
         }
 
         function endTextDrag() {
+            if (isTextDragging && !textTouchMoved) {
+                // 没有移动，视为点击，切换 active
+                previewText.classList.toggle('active');
+            }
             isTextDragging = false;
             previewText.classList.remove('dragging');
         }
-
-        // === 文字 active 状态切换 ===
-        previewText.addEventListener('click', (e) => {
-            if (e.target.classList.contains('resize-handle')) return;
-            previewText.classList.toggle('active');
-        });
 
         // === 文字缩放手柄 ===
         let isTextResizing = false;
@@ -1125,7 +1134,7 @@
             if (!isTextResizing) return;
             const dx = x - textResizeStartX;
             const dy = y - textResizeStartY;
-            const delta = (dx + dy) / 2;
+            const delta = Math.max(dx, dy);
             const newSize = Math.max(12, Math.min(200, textResizeStartFontSize + delta));
             fontSize.value = Math.round(newSize);
             previewText.style.fontSize = Math.round(newSize) + 'px';
@@ -1138,14 +1147,23 @@
         // 初始化绑定已有手柄
         document.querySelectorAll('.text-resize').forEach(bindTextResizeHandle);
 
+        let textWasTouch = false;
         previewText.addEventListener('mousedown', (e) => {
             if (e.target.classList.contains('resize-handle')) return;
             startTextDrag(e.clientX, e.clientY); e.preventDefault();
         });
         previewText.addEventListener('touchstart', (e) => {
             if (e.target.classList.contains('resize-handle')) return;
+            textWasTouch = true;
             startTextDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault();
         }, { passive: false });
+
+        // 防止 touchend 后 click 重复触发 active toggle
+        previewText.addEventListener('click', (e) => {
+            if (textWasTouch) { textWasTouch = false; return; }
+            if (e.target.classList.contains('resize-handle')) return;
+            previewText.classList.toggle('active');
+        });
 
         // === 拖拽：Logo ===
         function startLogoDrag(x, y) {
