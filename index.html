@@ -5,258 +5,422 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>字体预览工具</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary: #6c63ff;
+            --primary-dark: #4b44cc;
+            --primary-light: #ede9ff;
+            --accent: #ff6584;
+            --green: #43e97b;
+            --green2: #38f9d7;
+            --bg: #f0eeff;
+            --panel-bg: #ffffff;
+            --border: #e4e0f5;
+            --text-main: #2d2d3a;
+            --text-sub: #7b7b9a;
+            --shadow: 0 4px 24px rgba(108,99,255,0.10);
+            --shadow-lg: 0 8px 40px rgba(108,99,255,0.15);
+            --radius: 16px;
+            --radius-sm: 10px;
         }
 
         body {
-            font-family: "Microsoft YaHei", sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 16px;
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: var(--bg);
             min-height: 100vh;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            display: flex;
-            gap: 16px;
-        }
-
-        .input-panel {
-            flex: 0 0 300px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
             padding: 20px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            align-self: flex-start;
-            position: sticky;
-            top: 16px;
-            max-height: calc(100vh - 32px);
-            overflow-y: auto;
         }
 
-        .input-panel::-webkit-scrollbar {
-            width: 4px;
+        /* ── 整体布局 ── */
+        .app-layout {
+            max-width: 1440px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 16px;
+            min-height: calc(100vh - 40px);
         }
 
-        .input-panel::-webkit-scrollbar-thumb {
-            background: #ccc;
-            border-radius: 2px;
+        /* ── 顶部标题栏 ── */
+        .app-header {
+            grid-column: 1 / -1;
+            background: var(--panel-bg);
+            border-radius: var(--radius);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: var(--shadow);
         }
 
-        .input-panel h2 {
-            margin-bottom: 16px;
-            color: #333;
-            font-size: 17px;
+        .app-header .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .app-header .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--primary), #a78bfa);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+        }
+
+        .app-header h1 {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-main);
+            letter-spacing: -0.3px;
+        }
+
+        .app-header .tagline {
+            font-size: 12px;
+            color: var(--text-sub);
+            margin-top: 1px;
+        }
+
+        /* ── 保存按钮（顶部右侧） ── */
+        .btn-save-main {
             display: flex;
             align-items: center;
             gap: 8px;
-        }
-
-        .input-panel h2::before {
-            content: '';
-            width: 4px;
-            height: 18px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 2px;
-        }
-
-        .section-title {
-            font-size: 12px;
+            padding: 0 20px;
+            height: 40px;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(135deg, var(--green), var(--green2));
+            color: #fff;
+            font-size: 14px;
             font-weight: 600;
-            color: #764ba2;
-            margin: 14px 0 8px;
-            padding-bottom: 5px;
-            border-bottom: 1px solid #f0e6ff;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(67,233,123,0.35);
+            transition: transform 0.15s, box-shadow 0.15s;
+            white-space: nowrap;
+            flex-shrink: 0;
         }
 
-        .form-group {
+        .btn-save-main:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(67,233,123,0.45);
+        }
+
+        .btn-save-main:active { transform: translateY(0); }
+
+        .btn-save-main:disabled {
+            background: #ccc;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── 左侧控制面板 ── */
+        .control-panel {
+            background: var(--panel-bg);
+            border-radius: var(--radius);
+            box-shadow: var(--shadow);
+            overflow-y: auto;
+            align-self: start;
+            position: sticky;
+            top: 20px;
+            max-height: calc(100vh - 40px);
+        }
+
+        .control-panel::-webkit-scrollbar { width: 4px; }
+        .control-panel::-webkit-scrollbar-track { background: transparent; }
+        .control-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+        .panel-body { padding: 20px; }
+
+        /* ── 分组标题 ── */
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--primary);
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            margin: 18px 0 10px;
+        }
+
+        .section-label:first-child { margin-top: 0; }
+
+        .section-label::before {
+            content: '';
+            display: block;
+            width: 3px;
+            height: 12px;
+            background: linear-gradient(180deg, var(--primary), #a78bfa);
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+
+        .section-label::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* ── 表单组 ── */
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .form-item {
             margin-bottom: 10px;
         }
 
-        .form-group label {
-            display: block;
-            margin-bottom: 3px;
-            color: #555;
+        .form-item label {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             font-size: 12px;
+            color: var(--text-sub);
             font-weight: 500;
+            margin-bottom: 5px;
+        }
+
+        .form-item label .val-badge {
+            font-size: 11px;
+            color: var(--primary);
+            background: var(--primary-light);
+            padding: 1px 6px;
+            border-radius: 6px;
+            font-weight: 600;
         }
 
         textarea {
             width: 100%;
             height: 80px;
-            padding: 8px;
-            border: 1px solid #e0d6f0;
-            border-radius: 8px;
+            padding: 9px 11px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
             font-size: 14px;
             resize: vertical;
-            transition: border-color 0.2s;
+            color: var(--text-main);
+            background: #faf9ff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: inherit;
         }
 
         textarea:focus {
             outline: none;
-            border-color: #764ba2;
-            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
         }
 
-        select, input[type="color"], input[type="number"] {
+        select, input[type="number"] {
             width: 100%;
-            padding: 6px 8px;
-            border: 1px solid #e0d6f0;
-            border-radius: 8px;
+            padding: 7px 10px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
             font-size: 13px;
-            transition: border-color 0.2s;
-            background: #fff;
+            color: var(--text-main);
+            background: #faf9ff;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237b7b9a' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 28px;
+            cursor: pointer;
         }
 
         select:focus, input[type="number"]:focus {
             outline: none;
-            border-color: #764ba2;
-            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(108,99,255,0.12);
         }
+
+        input[type="number"] { background-image: none; padding-right: 10px; }
 
         input[type="color"] {
-            height: 34px;
-            cursor: pointer;
+            width: 100%;
+            height: 36px;
             padding: 3px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            background: #faf9ff;
         }
 
+        /* ── 滑块 ── */
         input[type="range"] {
             width: 100%;
-            padding: 0;
+            height: 5px;
             border: none;
-            height: 6px;
+            padding: 0;
             -webkit-appearance: none;
             appearance: none;
-            background: #e0d6f0;
+            background: var(--border);
             border-radius: 3px;
             outline: none;
-            margin-top: 4px;
+            margin-top: 2px;
+            cursor: pointer;
         }
 
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 16px;
-            height: 16px;
+            width: 17px;
+            height: 17px;
             border-radius: 50%;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            background: linear-gradient(135deg, var(--primary), #a78bfa);
             cursor: pointer;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            box-shadow: 0 2px 6px rgba(108,99,255,0.4);
+            border: 2px solid #fff;
         }
 
+        /* ── 上传按钮 ── */
         .btn-upload {
-            display: block;
-            width: 100%;
-            padding: 8px;
-            border: 1px dashed #b39ddb;
-            border-radius: 8px;
-            background: #f8f4ff;
-            color: #764ba2;
-            font-size: 12px;
-            cursor: pointer;
-            text-align: center;
-            transition: background 0.2s;
-        }
-
-        .btn-upload:hover {
-            background: #ede7f6;
-        }
-
-        .btn-remove-logo {
-            display: none;
-            width: 100%;
-            padding: 6px;
-            border: none;
-            border-radius: 8px;
-            background: #ffebee;
-            color: #c62828;
-            font-size: 12px;
-            cursor: pointer;
-            margin-top: 6px;
-        }
-
-        .btn-remove-logo:hover {
-            background: #ffcdd2;
-        }
-
-        .preview-panel {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .preview-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 10px 16px;
-            border-radius: 16px 16px 0 0;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        }
-
-        .preview-header h2 {
-            color: #333;
-            margin: 0;
-            font-size: 15px;
-        }
-
-        .zoom-controls {
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .zoom-controls button {
-            width: 28px;
-            height: 28px;
-            border: none;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-            cursor: pointer;
-            font-size: 15px;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.1s, opacity 0.2s;
-        }
-
-        .zoom-controls button:hover {
-            transform: scale(1.05);
-            opacity: 0.9;
-        }
-
-        .zoom-controls button:active {
-            transform: scale(0.95);
-        }
-
-        .zoom-controls span {
-            font-size: 11px;
-            color: #666;
-            min-width: 34px;
-            text-align: center;
+            gap: 6px;
+            width: 100%;
+            padding: 9px;
+            border: 1.5px dashed #b8b0f0;
+            border-radius: var(--radius-sm);
+            background: var(--primary-light);
+            color: var(--primary);
+            font-size: 12px;
             font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s;
         }
 
+        .btn-upload:hover { background: #ddd7ff; border-color: var(--primary); }
+
+        .btn-upload svg { flex-shrink: 0; }
+
+        .btn-remove {
+            display: none;
+            width: 100%;
+            padding: 7px;
+            border: none;
+            border-radius: var(--radius-sm);
+            background: #fff0f3;
+            color: #e0334c;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 6px;
+            transition: background 0.2s;
+        }
+
+        .btn-remove:hover { background: #ffd6de; }
+
+        /* ── 右侧预览面板 ── */
+        .preview-panel {
+            display: flex;
+            flex-direction: column;
+            border-radius: var(--radius);
+            overflow: hidden;
+            box-shadow: var(--shadow-lg);
+            background: #1e1b2e;
+        }
+
+        .preview-toolbar {
+            background: var(--panel-bg);
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: nowrap;
+            flex-shrink: 0;
+        }
+
+        .preview-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-right: auto;
+            white-space: nowrap;
+        }
+
+        .toolbar-divider {
+            width: 1px;
+            height: 20px;
+            background: var(--border);
+            flex-shrink: 0;
+        }
+
+        /* ── 缩放控件 ── */
+        .zoom-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--bg);
+            border-radius: 20px;
+            padding: 3px 6px;
+            flex-shrink: 0;
+        }
+
+        .zoom-btn {
+            width: 26px;
+            height: 26px;
+            border: none;
+            border-radius: 50%;
+            background: transparent;
+            color: var(--primary);
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s;
+            line-height: 1;
+        }
+
+        .zoom-btn:hover { background: var(--primary-light); }
+
+        .zoom-val {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-sub);
+            min-width: 38px;
+            text-align: center;
+        }
+
+        .btn-reset {
+            padding: 0 10px;
+            height: 28px;
+            border: 1.5px solid var(--border);
+            border-radius: 14px;
+            background: transparent;
+            color: var(--text-sub);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: border-color 0.15s, color 0.15s;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn-reset:hover { border-color: var(--primary); color: var(--primary); }
+
+        /* ── 预览区域 ── */
         .preview-area {
-            border-radius: 0 0 16px 16px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            flex: 1;
             overflow: hidden;
             position: relative;
-            background: #1a1a2e;
-            max-height: calc(100vh - 100px);
+            background: #1e1b2e;
         }
 
-        .preview-zoom-container {
+        .preview-scroll {
             width: 100%;
-            max-height: calc(100vh - 100px);
+            height: calc(100vh - 160px);
             overflow: auto;
             display: flex;
             align-items: flex-start;
@@ -274,48 +438,24 @@
             transform-origin: top center;
         }
 
-        .preview-bg-img {
-            display: block;
-            transform-origin: center center;
-        }
+        .preview-bg-img { display: block; transform-origin: center center; }
 
         .preview-bg-default {
             width: 100%;
             height: 0;
             padding-bottom: 50%;
-            background: #666;
+            background: linear-gradient(135deg, #2d2a4e 0%, #3d3560 100%);
         }
 
-        .fit-contain .preview-bg-img {
-            width: 100%;
-            height: auto;
-            max-height: calc(100vh - 100px);
-            object-fit: contain;
-        }
-
-        .fit-cover .preview-bg-img {
-            width: 100%;
-            height: calc(100vh - 100px);
-            object-fit: cover;
-        }
-
-        .fit-fill .preview-bg-img {
-            width: 100%;
-            height: calc(100vh - 100px);
-            object-fit: fill;
-        }
-
-        .fit-width .preview-bg-img {
-            width: 100%;
-            height: auto;
-        }
+        .fit-contain .preview-bg-img { width: 100%; height: auto; max-height: calc(100vh - 160px); object-fit: contain; }
+        .fit-cover  .preview-bg-img { width: 100%; height: calc(100vh - 160px); object-fit: cover; }
+        .fit-fill   .preview-bg-img { width: 100%; height: calc(100vh - 160px); object-fit: fill; }
+        .fit-width  .preview-bg-img { width: 100%; height: auto; }
 
         .preview-text-overlay {
             position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             overflow: hidden;
         }
 
@@ -330,354 +470,233 @@
             position: absolute;
             cursor: grab;
             user-select: none;
-            left: 50%;
-            top: 50%;
+            left: 50%; top: 50%;
             transform: translate(-50%, -50%);
             border: 2px solid transparent;
+            border-radius: 4px;
             transition: border-color 0.2s;
         }
 
-        .preview-text:hover {
-            border-color: rgba(102, 126, 234, 0.6);
-        }
+        .preview-text:hover { border-color: rgba(108,99,255,0.5); }
+        .preview-text.active { border: 2px dashed rgba(108,99,255,0.8); }
+        .preview-text .resize-handle.text-resize { display: none; }
+        .preview-text.active .resize-handle.text-resize { display: block; }
+        .preview-text.dragging { cursor: grabbing; }
 
-        .preview-text.active {
-            border: 2px dashed #667eea;
-        }
-
-        .preview-text .resize-handle.text-resize {
-            display: none;
-        }
-
-        .preview-text.active .resize-handle.text-resize {
-            display: block;
-        }
-
-        .preview-text.dragging {
-            cursor: grabbing;
-        }
-
-        /* Logo */
         .preview-logo {
             position: absolute;
             cursor: grab;
             user-select: none;
             display: none;
             border: 2px solid transparent;
+            border-radius: 4px;
             transition: border-color 0.2s;
         }
 
-        .preview-logo:hover {
-            border-color: rgba(102, 126, 234, 0.6);
-        }
+        .preview-logo:hover { border-color: rgba(108,99,255,0.5); }
+        .preview-logo.active { border: 2px dashed rgba(108,99,255,0.8); }
+        .preview-logo.dragging { cursor: grabbing; }
+        .preview-logo img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
 
-        .preview-logo.active {
-            border: 2px dashed #667eea;
-        }
-
-        .preview-logo.dragging {
-            cursor: grabbing;
-            border: 2px dashed #764ba2;
-        }
-
-        .preview-logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            pointer-events: none;
-        }
-
-        /* Logo 四角缩放手柄 */
         .resize-handle {
             position: absolute;
-            width: 12px;
-            height: 12px;
-            background: #667eea;
+            width: 12px; height: 12px;
+            background: var(--primary);
             border: 2px solid #fff;
             border-radius: 50%;
             display: none;
             z-index: 10;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
         }
 
-        .preview-logo.active .resize-handle {
-            display: block;
-        }
-
+        .preview-logo.active .resize-handle { display: block; }
         .resize-handle.nw { top: -6px; left: -6px; cursor: nw-resize; }
         .resize-handle.ne { top: -6px; right: -6px; cursor: ne-resize; }
         .resize-handle.sw { bottom: -6px; left: -6px; cursor: sw-resize; }
         .resize-handle.se { bottom: -6px; right: -6px; cursor: se-resize; }
 
-        /* Word 艺术字样式 */
-        .wordart-none {}
-
-        .wordart-gradient-blue {
-            background: linear-gradient(180deg, #1e90ff 0%, #00008b 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));
-        }
-
-        .wordart-gradient-gold {
-            background: linear-gradient(180deg, #ffd700 0%, #b8860b 50%, #ffd700 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.4));
-        }
-
-        .wordart-gradient-rainbow {
-            background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .wordart-outline-black {
-            -webkit-text-stroke: 2px #333;
-            color: transparent;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .wordart-outline-shadow {
-            -webkit-text-stroke: 1px #fff;
-            color: transparent;
-            -webkit-text-fill-color: transparent;
-            filter: drop-shadow(3px 3px 0 rgba(0,0,0,0.5));
-        }
-
-        .wordart-shadow-deep {
-            color: #fff;
-            text-shadow:
-                0 1px 0 #ccc,
-                0 2px 0 #c9c9c9,
-                0 3px 0 #bbb,
-                0 4px 0 #b9b9b9,
-                0 5px 0 #aaa,
-                0 6px 1px rgba(0,0,0,.1),
-                0 0 5px rgba(0,0,0,.1),
-                0 1px 3px rgba(0,0,0,.3),
-                0 3px 5px rgba(0,0,0,.2),
-                0 5px 10px rgba(0,0,0,.25);
-        }
-
-        .wordart-chrome {
-            background: linear-gradient(180deg, #e8e8e8 0%, #999 25%, #fff 50%, #999 75%, #e8e8e8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.5));
-        }
-
-        .wordart-fire {
-            background: linear-gradient(180deg, #fff 0%, #ff0 20%, #f80 50%, #f00 80%, #800 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: drop-shadow(0 0 4px rgba(255,100,0,0.6));
-        }
-
-        .wordart-ice {
-            background: linear-gradient(180deg, #fff 0%, #a8d8ea 30%, #4fc3f7 60%, #0288d1 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: drop-shadow(0 0 3px rgba(79,195,247,0.5));
-        }
-
-        .wordart-sunset {
-            background: linear-gradient(180deg, #ff6b6b 0%, #feca57 50%, #ff9ff3 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: drop-shadow(1px 2px 3px rgba(0,0,0,0.3));
-        }
-
-        .wordart-emerald {
-            background: linear-gradient(180deg, #a8ff78 0%, #1fa2ff 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: drop-shadow(1px 2px 2px rgba(0,0,0,0.3));
-        }
-
-        .wordart-rose-gold {
-            background: linear-gradient(180deg, #fceabb 0%, #e8a87c 50%, #d63384 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            filter: drop-shadow(1px 1px 2px rgba(0,0,0,0.3));
-        }
-
-        .wordart-neon {
-            color: #fff;
-            text-shadow:
-                0 0 5px #fff,
-                0 0 10px #fff,
-                0 0 20px #0ff,
-                0 0 40px #0ff,
-                0 0 80px #0ff;
-        }
-
-        .wordart-emboss {
-            color: #666;
-            text-shadow:
-                -1px -1px 1px rgba(255,255,255,0.8),
-                1px 1px 1px rgba(0,0,0,0.3);
-        }
-
-        .row-group {
-            display: flex;
-            gap: 8px;
-        }
-
-        .row-group .form-group {
-            flex: 1;
-        }
-
         .drag-hint {
-            font-size: 11px;
-            color: rgba(255,255,255,0.7);
-            text-align: center;
-            padding: 5px;
-            background: rgba(0,0,0,0.3);
             position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
+            bottom: 0; left: 0; right: 0;
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            text-align: center;
+            padding: 6px;
+            background: linear-gradient(transparent, rgba(0,0,0,0.4));
+            pointer-events: none;
         }
 
-        /* ===== 手机端响应式 ===== */
-        @media (max-width: 768px) {
-            body {
-                padding: 10px;
+        /* ── 艺术字 CSS ── */
+        .wordart-none {}
+        .wordart-gradient-blue { background: linear-gradient(180deg,#1e90ff 0%,#00008b 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(2px 2px 2px rgba(0,0,0,.3)); }
+        .wordart-gradient-gold { background: linear-gradient(180deg,#ffd700 0%,#b8860b 50%,#ffd700 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(1px 1px 2px rgba(0,0,0,.4)); }
+        .wordart-gradient-rainbow { background: linear-gradient(90deg,#ff0000,#ff7f00,#ffff00,#00ff00,#0000ff,#8b00ff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+        .wordart-outline-black { -webkit-text-stroke:2px #333; color:transparent; -webkit-text-fill-color:transparent; }
+        .wordart-outline-shadow { -webkit-text-stroke:1px #fff; color:transparent; -webkit-text-fill-color:transparent; filter:drop-shadow(3px 3px 0 rgba(0,0,0,.5)); }
+        .wordart-shadow-deep { color:#fff; text-shadow:0 1px 0 #ccc,0 2px 0 #c9c9c9,0 3px 0 #bbb,0 4px 0 #b9b9b9,0 5px 0 #aaa,0 6px 1px rgba(0,0,0,.1),0 0 5px rgba(0,0,0,.1),0 1px 3px rgba(0,0,0,.3),0 3px 5px rgba(0,0,0,.2),0 5px 10px rgba(0,0,0,.25); }
+        .wordart-chrome { background:linear-gradient(180deg,#e8e8e8 0%,#999 25%,#fff 50%,#999 75%,#e8e8e8 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(2px 2px 3px rgba(0,0,0,.5)); }
+        .wordart-fire { background:linear-gradient(180deg,#fff 0%,#ff0 20%,#f80 50%,#f00 80%,#800 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(0 0 4px rgba(255,100,0,.6)); }
+        .wordart-ice { background:linear-gradient(180deg,#fff 0%,#a8d8ea 30%,#4fc3f7 60%,#0288d1 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(0 0 3px rgba(79,195,247,.5)); }
+        .wordart-sunset { background:linear-gradient(180deg,#ff6b6b 0%,#feca57 50%,#ff9ff3 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(1px 2px 3px rgba(0,0,0,.3)); }
+        .wordart-emerald { background:linear-gradient(180deg,#a8ff78 0%,#1fa2ff 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(1px 2px 2px rgba(0,0,0,.3)); }
+        .wordart-rose-gold { background:linear-gradient(180deg,#fceabb 0%,#e8a87c 50%,#d63384 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; filter:drop-shadow(1px 1px 2px rgba(0,0,0,.3)); }
+        .wordart-neon { color:#fff; text-shadow:0 0 5px #fff,0 0 10px #fff,0 0 20px #0ff,0 0 40px #0ff,0 0 80px #0ff; }
+        .wordart-emboss { color:#666; text-shadow:-1px -1px 1px rgba(255,255,255,.8),1px 1px 1px rgba(0,0,0,.3); }
+
+        /* ══════════════════════════════
+           手机端响应式
+        ══════════════════════════════ */
+        /* 手机端工具栏保存按钮默认隐藏，桌面端不需要 */
+        .btn-save-toolbar { display: none; }
+
+        @media (max-width: 900px) {
+            body { padding: 12px; }
+
+            .app-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto auto 1fr;
+                min-height: unset;
             }
 
-            .container {
-                flex-direction: column-reverse;
-                gap: 12px;
+            .app-header { padding: 12px 16px; }
+            .app-header h1 { font-size: 16px; }
+
+            /* 顶部保存按钮在手机上隐藏 */
+            .btn-save-main { display: none; }
+
+            /* 工具栏里的保存按钮显示出来 */
+            .btn-save-toolbar {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                padding: 0 12px;
+                height: 30px;
+                border: none;
+                border-radius: 15px;
+                background: linear-gradient(135deg, var(--green), var(--green2));
+                color: #fff;
+                font-size: 12px;
+                font-weight: 600;
+                cursor: pointer;
+                box-shadow: 0 3px 10px rgba(67,233,123,0.4);
+                transition: transform 0.15s, box-shadow 0.15s;
+                white-space: nowrap;
+                flex-shrink: 0;
             }
 
-            .input-panel {
-                flex: none;
-                width: 100%;
+            .btn-save-toolbar:active { transform: scale(0.95); }
+            .btn-save-toolbar:disabled { background: #ccc; box-shadow: none; }
+
+            .control-panel {
                 position: static;
                 max-height: none;
-                padding: 16px;
-                border-radius: 12px;
-                order: 2;
+                overflow-y: visible;
             }
 
             .preview-panel {
-                min-width: 0;
-                width: 100%;
-                order: 1;
+                border-radius: var(--radius);
             }
 
-            .preview-header {
-                border-radius: 12px 12px 0 0;
-                padding: 8px 12px;
+            .preview-scroll {
+                height: 60vw;
+                min-height: 240px;
+                max-height: 60vh;
             }
 
-            .preview-area {
-                border-radius: 0 0 12px 12px;
-            }
-
-            .preview-zoom-container {
-                max-height: 80vh;
-            }
-
-            .fit-contain .preview-bg-img {
-                max-height: 80vh;
-            }
-
+            .fit-contain .preview-bg-img { max-height: 60vw; }
             .fit-cover .preview-bg-img,
-            .fit-fill .preview-bg-img {
-                height: 80vh;
-            }
+            .fit-fill  .preview-bg-img   { height: 60vw; }
 
-            .preview-bg-default {
-                padding-bottom: 80%;
-            }
-
-            .preview-text {
-                font-size: 20px;
-                padding: 12px;
-            }
-
-            textarea {
-                height: 60px;
-            }
-
-            .row-group {
+            .preview-toolbar {
+                padding: 8px 12px;
                 gap: 6px;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
             }
 
-            .section-title {
-                margin: 10px 0 6px;
-            }
+            .toolbar-divider { display: none; }
 
-            /* 移动端 Logo 缩放手柄放大，方便触摸 */
-            .resize-handle {
-                width: 24px;
-                height: 24px;
-            }
+            .form-row { grid-template-columns: 1fr 1fr; gap: 8px; }
 
-            .resize-handle.nw { top: -12px; left: -12px; }
-            .resize-handle.ne { top: -12px; right: -12px; }
-            .resize-handle.sw { bottom: -12px; left: -12px; }
-            .resize-handle.se { bottom: -12px; right: -12px; }
+            textarea { height: 64px; }
         }
 
         @media (max-width: 480px) {
-            .preview-text {
-                font-size: 18px;
-            }
+            body { padding: 8px; }
 
-            .zoom-controls button {
-                width: 32px;
-                height: 32px;
-                font-size: 15px;
-            }
+            .app-layout { gap: 10px; }
 
-            .preview-header h2 {
-                font-size: 13px;
-            }
+            .app-header { padding: 10px 14px; }
+            .app-header .tagline { display: none; }
+            .app-header h1 { font-size: 15px; }
+            .btn-save-main span.save-label { display: none; }
+            .btn-save-main { padding: 0 12px; gap: 0; }
+
+            .preview-scroll { height: 56vw; min-height: 220px; }
+
+            .fit-contain .preview-bg-img { max-height: 56vw; }
+            .fit-cover .preview-bg-img,
+            .fit-fill  .preview-bg-img   { height: 56vw; }
+
+            .zoom-val { min-width: 30px; font-size: 11px; }
+
+            .resize-handle { width: 20px; height: 20px; }
+            .resize-handle.nw { top: -10px; left: -10px; }
+            .resize-handle.ne { top: -10px; right: -10px; }
+            .resize-handle.sw { bottom: -10px; left: -10px; }
+            .resize-handle.se { bottom: -10px; right: -10px; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="input-panel">
-            <h2>字体预览工具</h2>
+<div class="app-layout">
 
-            <div class="form-group">
-                <label for="textInput">输入文字</label>
-                <textarea id="textInput" placeholder="请输入要预览的文字...">DADA
+    <!-- 顶部标题栏 -->
+    <header class="app-header">
+        <div class="logo">
+            <div class="logo-icon">✦</div>
+            <div>
+                <div class="app-header h1" style="font-size:18px;font-weight:700;color:#2d2d3a;letter-spacing:-0.3px;">字体预览工具</div>
+                <div class="tagline">拖拽文字 · 调节样式 · 一键保存</div>
+            </div>
+        </div>
+        <button class="btn-save-main" id="saveBtn" title="保存为图片">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span class="save-label">保存图片</span>
+        </button>
+    </header>
+
+    <!-- 左侧控制面板 -->
+    <aside class="control-panel">
+        <div class="panel-body">
+
+            <div class="section-label">文字内容</div>
+
+            <div class="form-item">
+                <textarea id="textInput" placeholder="输入要预览的文字…">DADA
 最佳定制</textarea>
             </div>
 
-            <div class="section-title">字体设置</div>
+            <div class="section-label">字体样式</div>
 
-            <div class="form-group">
-                <label for="fontSelect">字体</label>
+            <div class="form-item">
+                <label>字体</label>
                 <select id="fontSelect">
-                    <option value="'STXingkai', '华文行楷', cursive">华文行楷</option>
-                    <option value="'STKaiti', '华文楷体', cursive">华文楷体</option>
-                    <option value="'STSong', '华文宋体', serif">华文宋体</option>
-                    <option value="'STFangsong', '华文仿宋', serif">华文仿宋</option>
-                    <option value="'STLiti', '华文隶书', cursive">华文隶书</option>
-                    <option value="'SimHei', '黑体', sans-serif">黑体</option>
-                    <option value="'SimSun', '宋体', serif">宋体</option>
-                    <option value="'KaiTi', '楷体', cursive">楷体</option>
-                    <option value="'FangSong', '仿宋', serif">仿宋</option>
-                    <option value="'Microsoft YaHei', '微软雅黑', sans-serif">微软雅黑</option>
+                    <option value="'STXingkai','华文行楷',cursive">华文行楷</option>
+                    <option value="'STKaiti','华文楷体',cursive">华文楷体</option>
+                    <option value="'STSong','华文宋体',serif">华文宋体</option>
+                    <option value="'STFangsong','华文仿宋',serif">华文仿宋</option>
+                    <option value="'STLiti','华文隶书',cursive">华文隶书</option>
+                    <option value="'SimHei','黑体',sans-serif">黑体</option>
+                    <option value="'SimSun','宋体',serif">宋体</option>
+                    <option value="'KaiTi','楷体',cursive">楷体</option>
+                    <option value="'FangSong','仿宋',serif">仿宋</option>
+                    <option value="'Microsoft YaHei','微软雅黑',sans-serif">微软雅黑</option>
                 </select>
             </div>
 
-            <div class="form-group">
-                <label for="artStyle">艺术字样式</label>
+            <div class="form-item">
+                <label>艺术字样式</label>
                 <select id="artStyle">
                     <option value="wordart-none">无（使用文字颜色）</option>
                     <option value="wordart-gradient-blue">渐变蓝</option>
@@ -697,38 +716,38 @@
                 </select>
             </div>
 
-            <div class="row-group">
-                <div class="form-group">
-                    <label for="fontSize">字号 (px)</label>
+            <div class="form-row">
+                <div class="form-item">
+                    <label>字号 (px)</label>
                     <input type="number" id="fontSize" value="24" min="12" max="200">
                 </div>
-                <div class="form-group">
-                    <label for="fontColor">颜色</label>
+                <div class="form-item">
+                    <label>颜色</label>
                     <input type="color" id="fontColor" value="#ffffff">
                 </div>
             </div>
 
-            <div class="form-group">
-                <label>字间距: <span id="letterSpacingVal">0px</span></label>
+            <div class="form-item">
+                <label>字间距 <span class="val-badge" id="letterSpacingVal">0px</span></label>
                 <input type="range" id="letterSpacing" min="0" max="30" value="0" step="1">
             </div>
 
-            <div class="form-group">
-                <label>行间距: <span id="lineHeightVal">1.1</span></label>
+            <div class="form-item">
+                <label>行间距 <span class="val-badge" id="lineHeightVal">1.1</span></label>
                 <input type="range" id="lineHeight" min="1" max="4" value="1.1" step="0.1">
             </div>
 
-            <div class="row-group">
-                <div class="form-group">
-                    <label for="textAlign">对齐</label>
+            <div class="form-row">
+                <div class="form-item">
+                    <label>对齐</label>
                     <select id="textAlign">
                         <option value="center" selected>居中</option>
                         <option value="left">左对齐</option>
                         <option value="right">右对齐</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <label for="direction">方向</label>
+                <div class="form-item">
+                    <label>方向</label>
                     <select id="direction">
                         <option value="horizontal" selected>横向</option>
                         <option value="vertical">竖向</option>
@@ -736,33 +755,35 @@
                 </div>
             </div>
 
-            <div class="section-title">LOGO 设置</div>
+            <div class="section-label">LOGO</div>
 
-            <div class="form-group">
-                <label class="btn-upload" for="logoInput" id="logoUploadLabel">
-                    <span id="logoUploadText">点击上传 LOGO 图片</span>
+            <div class="form-item">
+                <label class="btn-upload" for="logoInput">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    <span id="logoUploadText">点击上传 LOGO</span>
                 </label>
                 <input type="file" id="logoInput" accept="image/*" style="display:none">
-                <button class="btn-remove-logo" id="logoRemoveBtn">移除 LOGO</button>
+                <button class="btn-remove" id="logoRemoveBtn">✕ 移除 LOGO</button>
             </div>
 
-            <div class="form-group" id="logoSizeGroup" style="display:none">
-                <label>LOGO 大小: <span id="logoSizeVal">80px</span></label>
+            <div class="form-item" id="logoSizeGroup" style="display:none">
+                <label>LOGO 大小 <span class="val-badge" id="logoSizeVal">80px</span></label>
                 <input type="range" id="logoSize" min="30" max="300" value="80" step="5">
             </div>
 
-            <div class="section-title">背景设置</div>
+            <div class="section-label">背景</div>
 
-            <div class="form-group">
-                <label class="btn-upload" for="bgInput" id="bgUploadLabel">
+            <div class="form-item">
+                <label class="btn-upload" for="bgInput">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                     <span id="bgUploadText">上传背景图片</span>
                 </label>
                 <input type="file" id="bgInput" accept="image/*" style="display:none">
-                <button class="btn-remove-logo" id="bgRemoveBtn" style="display:none">恢复默认灰色背景</button>
+                <button class="btn-remove" id="bgRemoveBtn" style="display:none">✕ 恢复默认背景</button>
             </div>
 
-            <div class="form-group">
-                <label for="fitMode">填充方式</label>
+            <div class="form-item">
+                <label>填充方式</label>
                 <select id="fitMode">
                     <option value="fit-contain" selected>自适应（完整显示）</option>
                     <option value="fit-cover">覆盖（裁切填满）</option>
@@ -770,20 +791,32 @@
                     <option value="fit-width">按宽度适应</option>
                 </select>
             </div>
+
+        </div>
+    </aside>
+
+    <!-- 右侧预览面板 -->
+    <div class="preview-panel">
+        <div class="preview-toolbar">
+            <span class="preview-title">预览效果</span>
+
+            <div class="zoom-group">
+                <button class="zoom-btn" id="zoomOut" title="缩小">−</button>
+                <span class="zoom-val" id="zoomLevel">100%</span>
+                <button class="zoom-btn" id="zoomIn" title="放大">+</button>
+            </div>
+
+            <button class="btn-reset" id="zoomReset">重置</button>
+
+            <!-- 手机端才显示，桌面端由顶部按钮负责 -->
+            <button class="btn-save-toolbar" id="saveBtnToolbar" title="保存为图片">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                保存
+            </button>
         </div>
 
-        <div class="preview-panel">
-            <div class="preview-header">
-                <h2>预览效果</h2>
-                <div class="zoom-controls">
-                    <button id="zoomOut" title="缩小">−</button>
-                    <span id="zoomLevel">100%</span>
-                    <button id="zoomIn" title="放大">+</button>
-                    <button id="zoomReset" style="width: auto; padding: 0 8px; font-size: 11px;" title="重置">重置</button>
-                </div>
-            </div>
-            <div class="preview-area" id="previewArea">
-                <div class="preview-zoom-container" id="zoomContainer">
+        <div class="preview-area" id="previewArea">
+            <div class="preview-scroll" id="zoomContainer">
                 <div class="preview-bg-wrapper fit-contain" id="bgWrapper">
                     <div class="preview-bg-default" id="bgDefault"></div>
                     <img class="preview-bg-img" id="bgImg" src="" alt="背景图" style="display:none">
@@ -803,439 +836,512 @@
                             <div class="resize-handle se" data-dir="se"></div>
                         </div>
                     </div>
-                </div><!-- /bgWrapper -->
-                </div><!-- /zoomContainer -->
-                <div class="drag-hint">拖拽文字/LOGO可调整位置</div>
+                </div>
             </div>
+            <div class="drag-hint">拖拽文字 / LOGO 可调整位置，点击可激活缩放手柄</div>
         </div>
     </div>
 
-    <script>
-        const textInput = document.getElementById('textInput');
-        const fontSelect = document.getElementById('fontSelect');
-        const fontSize = document.getElementById('fontSize');
-        const fontColor = document.getElementById('fontColor');
-        const textAlign = document.getElementById('textAlign');
-        const direction = document.getElementById('direction');
-        const letterSpacing = document.getElementById('letterSpacing');
-        const lineHeight = document.getElementById('lineHeight');
-        const artStyle = document.getElementById('artStyle');
-        const fitMode = document.getElementById('fitMode');
-        const previewText = document.getElementById('previewText');
-        const bgImg = document.getElementById('bgImg');
-        const bgDefault = document.getElementById('bgDefault');
-        const bgWrapper = document.getElementById('bgWrapper');
-        const textOverlay = document.getElementById('textOverlay');
-        const zoomInBtn = document.getElementById('zoomIn');
-        const zoomOutBtn = document.getElementById('zoomOut');
-        const zoomResetBtn = document.getElementById('zoomReset');
-        const zoomLevel = document.getElementById('zoomLevel');
-        const zoomContainer = document.getElementById('zoomContainer');
+</div>
 
-        const logoInput = document.getElementById('logoInput');
-        const logoUploadText = document.getElementById('logoUploadText');
-        const logoRemoveBtn = document.getElementById('logoRemoveBtn');
-        const logoSize = document.getElementById('logoSize');
-        const logoSizeGroup = document.getElementById('logoSizeGroup');
-        const previewLogo = document.getElementById('previewLogo');
-        const logoImg = document.getElementById('logoImg');
+<script>
+    const textInput    = document.getElementById('textInput');
+    const fontSelect   = document.getElementById('fontSelect');
+    const fontSize     = document.getElementById('fontSize');
+    const fontColor    = document.getElementById('fontColor');
+    const textAlign    = document.getElementById('textAlign');
+    const direction    = document.getElementById('direction');
+    const letterSpacing = document.getElementById('letterSpacing');
+    const lineHeight   = document.getElementById('lineHeight');
+    const artStyle     = document.getElementById('artStyle');
+    const fitMode      = document.getElementById('fitMode');
+    const previewText  = document.getElementById('previewText');
+    const bgImg        = document.getElementById('bgImg');
+    const bgDefault    = document.getElementById('bgDefault');
+    const bgWrapper    = document.getElementById('bgWrapper');
+    const textOverlay  = document.getElementById('textOverlay');
+    const zoomInBtn    = document.getElementById('zoomIn');
+    const zoomOutBtn   = document.getElementById('zoomOut');
+    const zoomResetBtn = document.getElementById('zoomReset');
+    const zoomLevel    = document.getElementById('zoomLevel');
+    const zoomContainer = document.getElementById('zoomContainer');
 
-        const bgInput = document.getElementById('bgInput');
-        const bgUploadText = document.getElementById('bgUploadText');
-        const bgRemoveBtn = document.getElementById('bgRemoveBtn');
+    const logoInput      = document.getElementById('logoInput');
+    const logoUploadText = document.getElementById('logoUploadText');
+    const logoRemoveBtn  = document.getElementById('logoRemoveBtn');
+    const logoSize       = document.getElementById('logoSize');
+    const logoSizeGroup  = document.getElementById('logoSizeGroup');
+    const previewLogo    = document.getElementById('previewLogo');
+    const logoImg        = document.getElementById('logoImg');
 
-        let currentZoom = 100;
+    const bgInput      = document.getElementById('bgInput');
+    const bgUploadText = document.getElementById('bgUploadText');
+    const bgRemoveBtn  = document.getElementById('bgRemoveBtn');
 
-        function applyZoom() {
-            const scale = currentZoom / 100;
-            bgWrapper.style.transform = 'scale(' + scale + ')';
-            bgWrapper.style.transformOrigin = 'top center';
-            // 缩放后调整容器高度，避免内容被裁切或留白过多
-            const naturalH = bgWrapper.offsetHeight;
-            zoomContainer.style.height = (naturalH * scale) + 'px';
+    let currentZoom = 100;
+
+    function applyZoom() {
+        const scale = currentZoom / 100;
+        bgWrapper.style.transform = 'scale(' + scale + ')';
+        bgWrapper.style.transformOrigin = 'top center';
+        const naturalH = bgWrapper.offsetHeight;
+        zoomContainer.style.height = (naturalH * scale) + 'px';
+    }
+
+    // 文字拖拽
+    let isTextDragging = false;
+    let textDragStartX, textDragStartY;
+    let textPosX = 50, textPosY = 50;
+
+    // Logo 拖拽
+    let isLogoDragging = false;
+    let logoDragStartX, logoDragStartY;
+    let logoPosX = 50, logoPosY = 20;
+
+    // === 背景图 ===
+    function setBgImage(dataUrl) {
+        bgImg.src = dataUrl;
+        bgImg.style.display = 'block';
+        bgDefault.style.display = 'none';
+        bgRemoveBtn.style.display = 'block';
+        bgUploadText.textContent = '更换背景图片';
+    }
+
+    function removeBgImage() {
+        bgImg.src = '';
+        bgImg.style.display = 'none';
+        bgDefault.style.display = 'block';
+        bgRemoveBtn.style.display = 'none';
+        bgUploadText.textContent = '上传背景图片';
+        try { localStorage.removeItem('bgImageData'); } catch(e) {}
+    }
+
+    bgInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            setBgImage(ev.target.result);
+            try { localStorage.setItem('bgImageData', ev.target.result); } catch(e) {}
+        };
+        reader.readAsDataURL(file);
+    });
+
+    bgRemoveBtn.addEventListener('click', removeBgImage);
+
+    try {
+        const savedBg = localStorage.getItem('bgImageData');
+        if (savedBg) setBgImage(savedBg);
+    } catch(e) {}
+
+    // === 缩放 ===
+    function updateZoom(delta) {
+        currentZoom = Math.max(50, Math.min(200, currentZoom + delta));
+        zoomLevel.textContent = currentZoom + '%';
+        applyZoom();
+    }
+
+    function updateFitMode() {
+        bgWrapper.className = 'preview-bg-wrapper ' + fitMode.value;
+    }
+
+    function updateTextPosition() {
+        previewText.style.left = textPosX + '%';
+        previewText.style.top  = textPosY + '%';
+        previewText.style.transform = 'translate(-50%, -50%)';
+    }
+
+    function updateLogoPosition() {
+        previewLogo.style.left = logoPosX + '%';
+        previewLogo.style.top  = logoPosY + '%';
+        previewLogo.style.transform = 'translate(-50%, -50%)';
+    }
+
+    function updateLogoSize() {
+        const size = logoSize.value;
+        previewLogo.style.width  = size + 'px';
+        previewLogo.style.height = size + 'px';
+        document.getElementById('logoSizeVal').textContent = size + 'px';
+    }
+
+    function updatePreview() {
+        previewText.textContent = textInput.value;
+        previewText.style.fontFamily    = fontSelect.value;
+        previewText.style.fontSize      = fontSize.value + 'px';
+        previewText.style.letterSpacing = letterSpacing.value + 'px';
+        previewText.style.lineHeight    = lineHeight.value;
+        previewText.style.textAlign     = textAlign.value;
+
+        document.getElementById('letterSpacingVal').textContent = letterSpacing.value + 'px';
+        document.getElementById('lineHeightVal').textContent    = lineHeight.value;
+
+        const artClass = artStyle.value;
+        const isActive = previewText.classList.contains('active');
+        previewText.className = 'preview-text ' + artClass + (isActive ? ' active' : '');
+
+        if (artClass === 'wordart-none') {
+            previewText.style.color = fontColor.value;
+        } else {
+            previewText.style.color = '';
         }
 
-        // 文字拖拽
-        let isTextDragging = false;
-        let textDragStartX, textDragStartY;
-        let textPosX = 50, textPosY = 50;
-
-        // Logo 拖拽
-        let isLogoDragging = false;
-        let logoDragStartX, logoDragStartY;
-        let logoPosX = 50, logoPosY = 20;
-
-        function updateBgImageOptions() {}
-
-        function updateBgSrc() {}
-
-        // === 背景图上传 ===
-        function setBgImage(dataUrl) {
-            bgImg.src = dataUrl;
-            bgImg.style.display = 'block';
-            bgDefault.style.display = 'none';
-            bgRemoveBtn.style.display = 'block';
-            bgUploadText.textContent = '更换背景图片';
+        if (direction.value === 'vertical') {
+            previewText.style.writingMode    = 'vertical-rl';
+            previewText.style.textOrientation = 'upright';
+        } else {
+            previewText.style.writingMode    = 'horizontal-tb';
+            previewText.style.textOrientation = 'mixed';
         }
 
-        function removeBgImage() {
-            bgImg.src = '';
-            bgImg.style.display = 'none';
-            bgDefault.style.display = 'block';
-            bgRemoveBtn.style.display = 'none';
-            bgUploadText.textContent = '上传背景图片';
-            try { localStorage.removeItem('bgImageData'); } catch(e) {}
-        }
+        updateTextPosition();
+        reattachTextResizeHandles();
+    }
 
-        bgInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                setBgImage(ev.target.result);
-                // 尝试存储到 localStorage
-                try { localStorage.setItem('bgImageData', ev.target.result); } catch(e) {}
-            };
-            reader.readAsDataURL(file);
-        });
-
-        bgRemoveBtn.addEventListener('click', removeBgImage);
-
-        // 页面加载时尝试恢复背景图
-        try {
-            const savedBg = localStorage.getItem('bgImageData');
-            if (savedBg) { setBgImage(savedBg); }
-        } catch(e) {}
-
-        function updateZoom(delta) {
-            currentZoom = Math.max(50, Math.min(200, currentZoom + delta));
-            zoomLevel.textContent = currentZoom + '%';
-            applyZoom();
-        }
-
-        function updateFitMode() {
-            bgWrapper.className = 'preview-bg-wrapper ' + fitMode.value;
-        }
-
-        function updateTextPosition() {
-            previewText.style.left = textPosX + '%';
-            previewText.style.top = textPosY + '%';
-            previewText.style.transform = 'translate(-50%, -50%)';
-        }
-
-        function updateLogoPosition() {
-            previewLogo.style.left = logoPosX + '%';
-            previewLogo.style.top = logoPosY + '%';
-            previewLogo.style.transform = 'translate(-50%, -50%)';
-        }
-
-        function updateLogoSize() {
-            const size = logoSize.value;
-            previewLogo.style.width = size + 'px';
-            previewLogo.style.height = size + 'px';
-            document.getElementById('logoSizeVal').textContent = size + 'px';
-        }
-
-        function updatePreview() {
-            previewText.textContent = textInput.value;
-            previewText.style.fontFamily = fontSelect.value;
-            previewText.style.fontSize = fontSize.value + 'px';
-            previewText.style.letterSpacing = letterSpacing.value + 'px';
-            previewText.style.lineHeight = lineHeight.value;
-            previewText.style.textAlign = textAlign.value;
-
-            document.getElementById('letterSpacingVal').textContent = letterSpacing.value + 'px';
-            document.getElementById('lineHeightVal').textContent = lineHeight.value;
-
-            const artClass = artStyle.value;
-            const isActive = previewText.classList.contains('active');
-            previewText.className = 'preview-text ' + artClass + (isActive ? ' active' : '');
-
-            if (artClass === 'wordart-none') {
-                previewText.style.color = fontColor.value;
-            } else {
-                previewText.style.color = '';
-            }
-
-            if (direction.value === 'vertical') {
-                previewText.style.writingMode = 'vertical-rl';
-                previewText.style.textOrientation = 'upright';
-            } else {
-                previewText.style.writingMode = 'horizontal-tb';
-                previewText.style.textOrientation = 'mixed';
-            }
-
-            updateTextPosition();
-            reattachTextResizeHandles();
-        }
-
-        // === Logo 上传 ===
-        logoInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                logoImg.src = ev.target.result;
-                previewLogo.style.display = 'block';
-                logoRemoveBtn.style.display = 'block';
-                logoSizeGroup.style.display = 'block';
-                logoUploadText.textContent = '重新上传 LOGO';
-                updateLogoSize();
-                updateLogoPosition();
-                previewLogo.classList.add('active');
-            };
-            reader.readAsDataURL(file);
-        });
-
-        logoRemoveBtn.addEventListener('click', () => {
-            logoImg.src = '';
-            previewLogo.style.display = 'none';
-            previewLogo.classList.remove('active');
-            logoRemoveBtn.style.display = 'none';
-            logoSizeGroup.style.display = 'none';
-            logoUploadText.textContent = '点击上传 LOGO 图片';
-            logoInput.value = '';
-        });
-
-        logoSize.addEventListener('input', updateLogoSize);
-
-        // 点击 logo 激活/取消
-        previewLogo.addEventListener('click', (e) => {
-            if (e.target.classList.contains('resize-handle')) return;
-            previewLogo.classList.toggle('active');
-        });
-
-        // 点击其他区域取消 logo 激活
-        textOverlay.addEventListener('click', (e) => {
-            if (!previewLogo.contains(e.target)) {
-                previewLogo.classList.remove('active');
-            }
-            if (!previewText.contains(e.target)) {
-                previewText.classList.remove('active');
-            }
-        });
-
-        // === Logo 缩放手柄 ===
-        let isResizing = false;
-        let resizeStartX, resizeStartY, resizeStartW, resizeStartH;
-
-        document.querySelectorAll('.preview-logo > .resize-handle').forEach(handle => {
-            handle.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                startResize(e.clientX, e.clientY);
-            });
-            handle.addEventListener('touchstart', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                startResize(e.touches[0].clientX, e.touches[0].clientY);
-            }, { passive: false });
-        });
-
-        function startResize(x, y) {
-            isResizing = true;
-            resizeStartX = x;
-            resizeStartY = y;
-            resizeStartW = parseInt(logoSize.value);
-        }
-
-        function moveResize(x, y) {
-            if (!isResizing) return;
-            const dx = x - resizeStartX;
-            const dy = y - resizeStartY;
-            const delta = Math.max(dx, dy);
-            const newSize = Math.max(30, Math.min(300, resizeStartW + delta));
-            logoSize.value = newSize;
+    // === Logo 上传 ===
+    logoInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+            logoImg.src = ev.target.result;
+            previewLogo.style.display = 'block';
+            logoRemoveBtn.style.display = 'block';
+            logoSizeGroup.style.display = 'block';
+            logoUploadText.textContent = '重新上传 LOGO';
             updateLogoSize();
-        }
+            updateLogoPosition();
+            previewLogo.classList.add('active');
+        };
+        reader.readAsDataURL(file);
+    });
 
-        function endResize() {
-            isResizing = false;
-        }
+    logoRemoveBtn.addEventListener('click', () => {
+        logoImg.src = '';
+        previewLogo.style.display = 'none';
+        previewLogo.classList.remove('active');
+        logoRemoveBtn.style.display = 'none';
+        logoSizeGroup.style.display = 'none';
+        logoUploadText.textContent = '点击上传 LOGO';
+        logoInput.value = '';
+    });
 
-        // === 拖拽：文字 ===
-        let textTouchStartX, textTouchStartY;
-        let textTouchMoved = false;
+    logoSize.addEventListener('input', updateLogoSize);
 
-        function startTextDrag(x, y) {
-            isTextDragging = true;
-            textTouchMoved = false;
-            previewText.classList.add('dragging');
-            textDragStartX = x;
-            textDragStartY = y;
-            textTouchStartX = x;
-            textTouchStartY = y;
-        }
+    previewLogo.addEventListener('click', (e) => {
+        if (e.target.classList.contains('resize-handle')) return;
+        previewLogo.classList.toggle('active');
+    });
 
-        function moveTextDrag(x, y) {
-            if (!isTextDragging) return;
-            const dx = x - textTouchStartX;
-            const dy = y - textTouchStartY;
-            if (!textTouchMoved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) {
-                textTouchMoved = true;
+    textOverlay.addEventListener('click', (e) => {
+        if (!previewLogo.contains(e.target)) previewLogo.classList.remove('active');
+        if (!previewText.contains(e.target))  previewText.classList.remove('active');
+    });
+
+    // === Logo 缩放手柄 ===
+    let isResizing = false;
+    let resizeStartX, resizeStartY, resizeStartW;
+
+    document.querySelectorAll('.preview-logo > .resize-handle').forEach(handle => {
+        handle.addEventListener('mousedown', (e) => { e.stopPropagation(); e.preventDefault(); startResize(e.clientX, e.clientY); });
+        handle.addEventListener('touchstart', (e) => { e.stopPropagation(); e.preventDefault(); startResize(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+    });
+
+    function startResize(x, y) { isResizing = true; resizeStartX = x; resizeStartY = y; resizeStartW = parseInt(logoSize.value); }
+    function moveResize(x, y) {
+        if (!isResizing) return;
+        const delta = Math.max(x - resizeStartX, y - resizeStartY);
+        logoSize.value = Math.max(30, Math.min(300, resizeStartW + delta));
+        updateLogoSize();
+    }
+    function endResize() { isResizing = false; }
+
+    // === 文字拖拽 ===
+    let textTouchStartX, textTouchStartY, textTouchMoved = false;
+
+    function startTextDrag(x, y) {
+        isTextDragging = true; textTouchMoved = false;
+        previewText.classList.add('dragging');
+        textDragStartX = x; textDragStartY = y;
+        textTouchStartX = x; textTouchStartY = y;
+    }
+
+    function moveTextDrag(x, y) {
+        if (!isTextDragging) return;
+        const dx = x - textTouchStartX, dy = y - textTouchStartY;
+        if (!textTouchMoved && (Math.abs(dx) > 5 || Math.abs(dy) > 5)) textTouchMoved = true;
+        const rect = textOverlay.getBoundingClientRect();
+        textPosX = Math.max(0, Math.min(100, textPosX + ((x - textDragStartX) / rect.width) * 100));
+        textPosY = Math.max(0, Math.min(100, textPosY + ((y - textDragStartY) / rect.height) * 100));
+        updateTextPosition();
+        textDragStartX = x; textDragStartY = y;
+    }
+
+    function endTextDrag() {
+        if (isTextDragging && !textTouchMoved) previewText.classList.toggle('active');
+        isTextDragging = false;
+        previewText.classList.remove('dragging');
+    }
+
+    // === 文字缩放手柄 ===
+    let isTextResizing = false, textResizeStartX, textResizeStartY, textResizeStartFontSize;
+
+    function reattachTextResizeHandles() {
+        ['nw','ne','sw','se'].forEach(dir => {
+            let h = previewText.querySelector('.text-resize.' + dir);
+            if (!h) {
+                h = document.createElement('div');
+                h.className = 'resize-handle text-resize ' + dir;
+                h.dataset.dir = dir;
+                previewText.appendChild(h);
+                bindTextResizeHandle(h);
             }
-            const rect = textOverlay.getBoundingClientRect();
-            textPosX = Math.max(0, Math.min(100, textPosX + ((x - textDragStartX) / rect.width) * 100));
-            textPosY = Math.max(0, Math.min(100, textPosY + ((y - textDragStartY) / rect.height) * 100));
-            updateTextPosition();
-            textDragStartX = x;
-            textDragStartY = y;
+        });
+    }
+
+    function bindTextResizeHandle(handle) {
+        handle.addEventListener('mousedown', (e) => { e.stopPropagation(); e.preventDefault(); startTextResize(e.clientX, e.clientY); });
+        handle.addEventListener('touchstart', (e) => { e.stopPropagation(); e.preventDefault(); startTextResize(e.touches[0].clientX, e.touches[0].clientY); }, { passive: false });
+    }
+
+    function startTextResize(x, y) { isTextResizing = true; textResizeStartX = x; textResizeStartY = y; textResizeStartFontSize = parseInt(fontSize.value); }
+    function moveTextResize(x, y) {
+        if (!isTextResizing) return;
+        const delta = Math.max(x - textResizeStartX, y - textResizeStartY);
+        const newSize = Math.max(12, Math.min(200, textResizeStartFontSize + delta));
+        fontSize.value = Math.round(newSize);
+        previewText.style.fontSize = Math.round(newSize) + 'px';
+    }
+    function endTextResize() { isTextResizing = false; }
+
+    document.querySelectorAll('.text-resize').forEach(bindTextResizeHandle);
+
+    let textWasTouch = false;
+    previewText.addEventListener('mousedown', (e) => { if (e.target.classList.contains('resize-handle')) return; startTextDrag(e.clientX, e.clientY); e.preventDefault(); });
+    previewText.addEventListener('touchstart', (e) => { if (e.target.classList.contains('resize-handle')) return; textWasTouch = true; startTextDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, { passive: false });
+    previewText.addEventListener('click', (e) => { if (textWasTouch) { textWasTouch = false; return; } if (e.target.classList.contains('resize-handle')) return; previewText.classList.toggle('active'); });
+
+    // === Logo 拖拽 ===
+    function startLogoDrag(x, y) { isLogoDragging = true; previewLogo.classList.add('dragging'); logoDragStartX = x; logoDragStartY = y; }
+    function moveLogoDrag(x, y) {
+        if (!isLogoDragging) return;
+        const rect = textOverlay.getBoundingClientRect();
+        logoPosX = Math.max(0, Math.min(100, logoPosX + ((x - logoDragStartX) / rect.width) * 100));
+        logoPosY = Math.max(0, Math.min(100, logoPosY + ((y - logoDragStartY) / rect.height) * 100));
+        updateLogoPosition();
+        logoDragStartX = x; logoDragStartY = y;
+    }
+    function endLogoDrag() { isLogoDragging = false; previewLogo.classList.remove('dragging'); }
+
+    previewLogo.addEventListener('mousedown', (e) => { if (e.target.classList.contains('resize-handle')) return; startLogoDrag(e.clientX, e.clientY); e.preventDefault(); });
+    previewLogo.addEventListener('touchstart', (e) => { if (e.target.classList.contains('resize-handle')) return; startLogoDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, { passive: false });
+
+    // 全局事件
+    document.addEventListener('mousemove', (e) => { moveTextDrag(e.clientX, e.clientY); moveLogoDrag(e.clientX, e.clientY); moveResize(e.clientX, e.clientY); moveTextResize(e.clientX, e.clientY); });
+    document.addEventListener('mouseup', () => { endTextDrag(); endLogoDrag(); endResize(); endTextResize(); });
+    document.addEventListener('touchmove', (e) => {
+        const t = e.touches[0];
+        moveTextDrag(t.clientX, t.clientY);
+        moveLogoDrag(t.clientX, t.clientY);
+        moveResize(t.clientX, t.clientY);
+        moveTextResize(t.clientX, t.clientY);
+        if (isTextDragging || isLogoDragging || isResizing || isTextResizing) e.preventDefault();
+    }, { passive: false });
+    document.addEventListener('touchend', () => { endTextDrag(); endLogoDrag(); endResize(); endTextResize(); });
+
+    // 事件绑定
+    textInput.addEventListener('input', updatePreview);
+    fontSelect.addEventListener('change', updatePreview);
+    fontSize.addEventListener('input', updatePreview);
+    fontColor.addEventListener('input', updatePreview);
+    textAlign.addEventListener('change', updatePreview);
+    direction.addEventListener('change', updatePreview);
+    letterSpacing.addEventListener('input', updatePreview);
+    lineHeight.addEventListener('input', updatePreview);
+    artStyle.addEventListener('change', updatePreview);
+    fitMode.addEventListener('change', updateFitMode);
+    zoomInBtn.addEventListener('click',  () => updateZoom(10));
+    zoomOutBtn.addEventListener('click', () => updateZoom(-10));
+    zoomResetBtn.addEventListener('click', () => { currentZoom = 100; zoomLevel.textContent = '100%'; applyZoom(); });
+
+    // 初始化
+    updateTextPosition();
+    updatePreview();
+
+    // ══════════════════════════════
+    // 保存图片
+    // ══════════════════════════════
+    async function triggerSave(btn, restoreHTML) {
+        btn.disabled = true;
+        btn.innerHTML = '生成中…';
+        try {
+            await saveAsImage();
+        } catch (e) {
+            alert('保存失败：' + e.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = restoreHTML;
+        }
+    }
+
+    const saveBtnTopHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span class="save-label">保存图片</span>`;
+    const saveBtnToolbarHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>保存`;
+
+    document.getElementById('saveBtn').addEventListener('click', function () {
+        triggerSave(this, saveBtnTopHTML);
+    });
+
+    document.getElementById('saveBtnToolbar').addEventListener('click', function () {
+        triggerSave(this, saveBtnToolbarHTML);
+    });
+
+    async function saveAsImage() {
+        const hasBg = bgImg.style.display !== 'none' && bgImg.src;
+        let canvasW, canvasH;
+
+        if (hasBg) {
+            await new Promise(r => { if (bgImg.complete) r(); else bgImg.onload = r; });
+            canvasW = bgImg.naturalWidth;
+            canvasH = bgImg.naturalHeight;
+        } else {
+            const scale = currentZoom / 100;
+            const rect  = bgWrapper.getBoundingClientRect();
+            canvasW = Math.round(rect.width  / scale);
+            canvasH = Math.round(rect.height / scale);
         }
 
-        function endTextDrag() {
-            if (isTextDragging && !textTouchMoved) {
-                // 没有移动，视为点击，切换 active
-                previewText.classList.toggle('active');
+        const canvas = document.createElement('canvas');
+        canvas.width = canvasW; canvas.height = canvasH;
+        const ctx = canvas.getContext('2d');
+
+        // 背景
+        if (hasBg) {
+            ctx.drawImage(bgImg, 0, 0, canvasW, canvasH);
+        } else {
+            ctx.fillStyle = '#3d3560';
+            ctx.fillRect(0, 0, canvasW, canvasH);
+        }
+
+        const scale = currentZoom / 100;
+        const wrapperRect = bgWrapper.getBoundingClientRect();
+        const displayW = wrapperRect.width  / scale;
+        const displayH = wrapperRect.height / scale;
+        const ratioX   = canvasW / displayW;
+        const ratioY   = canvasH / displayH;
+
+        // 文字
+        const textRect  = previewText.getBoundingClientRect();
+        const relLeft   = (textRect.left - wrapperRect.left) / scale;
+        const relTop    = (textRect.top  - wrapperRect.top)  / scale;
+        const relW      = textRect.width  / scale;
+        const relH      = textRect.height / scale;
+
+        const cs             = window.getComputedStyle(previewText);
+        const fontSizePx     = parseFloat(cs.fontSize)      / scale;
+        const fontFamily     = cs.fontFamily;
+        const fontWeight     = cs.fontWeight;
+        const writingMode    = cs.writingMode;
+        const lsPx           = (parseFloat(cs.letterSpacing) || 0) / scale;
+        const lineHeightPx   = parseFloat(cs.lineHeight) / scale;
+        const textAlignVal   = cs.textAlign;
+
+        ctx.save();
+
+        const artClass = artStyle.value;
+        const gradMap = {
+            'wordart-gradient-gold':   ['#ffd700','#b8860b','#ffd700'],
+            'wordart-gradient-blue':   ['#1e90ff','#00008b','#1e90ff'],
+            'wordart-gradient-rainbow':['#ff0000','#00ff00','#0000ff'],
+            'wordart-chrome':          ['#e8e8e8','#ffffff','#e8e8e8'],
+            'wordart-fire':            ['#ffffff','#ff8800','#880000'],
+            'wordart-ice':             ['#ffffff','#4fc3f7','#0288d1'],
+            'wordart-sunset':          ['#ff6b6b','#feca57','#ff9ff3'],
+            'wordart-emerald':         ['#a8ff78','#1fa2ff','#a8ff78'],
+            'wordart-rose-gold':       ['#fceabb','#e8a87c','#d63384'],
+        };
+
+        if (gradMap[artClass]) {
+            const [c0,c1,c2] = gradMap[artClass];
+            const g2 = ctx.createLinearGradient(relLeft*ratioX, relTop*ratioY, relLeft*ratioX, (relTop+relH)*ratioY);
+            g2.addColorStop(0,   c0);
+            g2.addColorStop(0.5, c1);
+            g2.addColorStop(1,   c2);
+            ctx.fillStyle = g2;
+        } else if (artClass === 'wordart-outline-black') {
+            ctx.fillStyle = '#000'; ctx.strokeStyle = '#fff'; ctx.lineWidth = fontSizePx * ratioY * 0.06;
+        } else if (artClass === 'wordart-outline-shadow') {
+            ctx.fillStyle = 'transparent'; ctx.strokeStyle = '#fff'; ctx.lineWidth = fontSizePx * ratioY * 0.05;
+        } else if (artClass === 'wordart-shadow-deep') {
+            ctx.fillStyle = '#fff';
+            ctx.shadowColor = 'rgba(0,0,0,0.4)'; ctx.shadowOffsetX = fontSizePx*ratioX*0.1; ctx.shadowOffsetY = fontSizePx*ratioY*0.1; ctx.shadowBlur = fontSizePx*ratioX*0.15;
+        } else if (artClass === 'wordart-neon') {
+            ctx.fillStyle = '#fff';
+            ctx.shadowColor = '#0ff'; ctx.shadowBlur = fontSizePx * ratioX * 0.5;
+        } else if (artClass === 'wordart-emboss') {
+            ctx.fillStyle = '#666';
+        } else {
+            ctx.fillStyle = fontColor.value;
+        }
+
+        ctx.font = `${fontWeight} ${fontSizePx * ratioY}px ${fontFamily}`;
+        ctx.textBaseline = 'top';
+
+        const lines = previewText.innerText.split('\n');
+        const lineH = lineHeightPx * ratioY;
+        const isVertical = writingMode === 'vertical-rl';
+
+        if (isVertical) {
+            const charW = fontSizePx * ratioX * 1.1;
+            let colX = (relLeft + relW) * ratioX;
+            for (const line of lines) {
+                colX -= charW;
+                let charY = relTop * ratioY;
+                for (const ch of line) {
+                    ctx.fillText(ch, colX, charY);
+                    if (artClass === 'wordart-outline-black' || artClass === 'wordart-outline-shadow') ctx.strokeText(ch, colX, charY);
+                    charY += lineH;
+                }
             }
-            isTextDragging = false;
-            previewText.classList.remove('dragging');
-        }
-
-        // === 文字缩放手柄 ===
-        let isTextResizing = false;
-        let textResizeStartX, textResizeStartY, textResizeStartFontSize;
-
-        // 因为 updatePreview 使用 textContent 会清除子元素，需要重新插入手柄
-        function reattachTextResizeHandles() {
-            const dirs = ['nw', 'ne', 'sw', 'se'];
-            dirs.forEach(dir => {
-                let handle = previewText.querySelector('.text-resize.' + dir);
-                if (!handle) {
-                    handle = document.createElement('div');
-                    handle.className = 'resize-handle text-resize ' + dir;
-                    handle.dataset.dir = dir;
-                    previewText.appendChild(handle);
-                    bindTextResizeHandle(handle);
+        } else {
+            ctx.textAlign = textAlignVal;
+            const alignX = textAlignVal === 'center' ? (relLeft + relW/2)*ratioX
+                         : textAlignVal === 'right'  ? (relLeft + relW)*ratioX
+                         : relLeft * ratioX;
+            lines.forEach((line, i) => {
+                const y = relTop * ratioY + i * lineH;
+                if (lsPx > 0) {
+                    const cw = fontSizePx * ratioX + lsPx * ratioX;
+                    const tw = [...line].length * cw;
+                    let sx = textAlignVal === 'center' ? alignX - tw/2 : textAlignVal === 'right' ? alignX - tw : alignX;
+                    for (const ch of line) {
+                        ctx.fillText(ch, sx, y);
+                        if (artClass === 'wordart-outline-black' || artClass === 'wordart-outline-shadow') ctx.strokeText(ch, sx, y);
+                        sx += cw;
+                    }
+                } else {
+                    ctx.fillText(line, alignX, y);
+                    if (artClass === 'wordart-outline-black' || artClass === 'wordart-outline-shadow') ctx.strokeText(line, alignX, y);
                 }
             });
         }
+        ctx.restore();
 
-        function bindTextResizeHandle(handle) {
-            handle.addEventListener('mousedown', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                startTextResize(e.clientX, e.clientY);
-            });
-            handle.addEventListener('touchstart', (e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                startTextResize(e.touches[0].clientX, e.touches[0].clientY);
-            }, { passive: false });
+        // Logo
+        if (previewLogo.style.display !== 'none' && logoImg.src) {
+            await new Promise(r => { if (logoImg.complete) r(); else logoImg.onload = r; });
+            const lr = previewLogo.getBoundingClientRect();
+            ctx.drawImage(logoImg,
+                (lr.left - wrapperRect.left) / scale * ratioX,
+                (lr.top  - wrapperRect.top)  / scale * ratioY,
+                lr.width  / scale * ratioX,
+                lr.height / scale * ratioY
+            );
         }
 
-        function startTextResize(x, y) {
-            isTextResizing = true;
-            textResizeStartX = x;
-            textResizeStartY = y;
-            textResizeStartFontSize = parseInt(fontSize.value);
-        }
-
-        function moveTextResize(x, y) {
-            if (!isTextResizing) return;
-            const dx = x - textResizeStartX;
-            const dy = y - textResizeStartY;
-            const delta = Math.max(dx, dy);
-            const newSize = Math.max(12, Math.min(200, textResizeStartFontSize + delta));
-            fontSize.value = Math.round(newSize);
-            previewText.style.fontSize = Math.round(newSize) + 'px';
-        }
-
-        function endTextResize() {
-            isTextResizing = false;
-        }
-
-        // 初始化绑定已有手柄
-        document.querySelectorAll('.text-resize').forEach(bindTextResizeHandle);
-
-        let textWasTouch = false;
-        previewText.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('resize-handle')) return;
-            startTextDrag(e.clientX, e.clientY); e.preventDefault();
-        });
-        previewText.addEventListener('touchstart', (e) => {
-            if (e.target.classList.contains('resize-handle')) return;
-            textWasTouch = true;
-            startTextDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault();
-        }, { passive: false });
-
-        // 防止 touchend 后 click 重复触发 active toggle
-        previewText.addEventListener('click', (e) => {
-            if (textWasTouch) { textWasTouch = false; return; }
-            if (e.target.classList.contains('resize-handle')) return;
-            previewText.classList.toggle('active');
-        });
-
-        // === 拖拽：Logo ===
-        function startLogoDrag(x, y) {
-            isLogoDragging = true;
-            previewLogo.classList.add('dragging');
-            logoDragStartX = x;
-            logoDragStartY = y;
-        }
-
-        function moveLogoDrag(x, y) {
-            if (!isLogoDragging) return;
-            const rect = textOverlay.getBoundingClientRect();
-            logoPosX = Math.max(0, Math.min(100, logoPosX + ((x - logoDragStartX) / rect.width) * 100));
-            logoPosY = Math.max(0, Math.min(100, logoPosY + ((y - logoDragStartY) / rect.height) * 100));
-            updateLogoPosition();
-            logoDragStartX = x;
-            logoDragStartY = y;
-        }
-
-        function endLogoDrag() {
-            isLogoDragging = false;
-            previewLogo.classList.remove('dragging');
-        }
-
-        previewLogo.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('resize-handle')) return;
-            startLogoDrag(e.clientX, e.clientY); e.preventDefault();
-        });
-        previewLogo.addEventListener('touchstart', (e) => {
-            if (e.target.classList.contains('resize-handle')) return;
-            startLogoDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault();
-        }, { passive: false });
-
-        // === 全局 move/end ===
-        document.addEventListener('mousemove', (e) => { moveTextDrag(e.clientX, e.clientY); moveLogoDrag(e.clientX, e.clientY); moveResize(e.clientX, e.clientY); moveTextResize(e.clientX, e.clientY); });
-        document.addEventListener('mouseup', () => { endTextDrag(); endLogoDrag(); endResize(); endTextResize(); });
-        document.addEventListener('touchmove', (e) => {
-            const t = e.touches[0];
-            moveTextDrag(t.clientX, t.clientY);
-            moveLogoDrag(t.clientX, t.clientY);
-            moveResize(t.clientX, t.clientY);
-            moveTextResize(t.clientX, t.clientY);
-            // 拖拽或缩放时阻止页面滚动
-            if (isTextDragging || isLogoDragging || isResizing || isTextResizing) {
-                e.preventDefault();
-            }
-        }, { passive: false });
-        document.addEventListener('touchend', () => { endTextDrag(); endLogoDrag(); endResize(); endTextResize(); });
-
-        // === 事件绑定 ===
-        textInput.addEventListener('input', updatePreview);
-        fontSelect.addEventListener('change', updatePreview);
-        fontSize.addEventListener('input', updatePreview);
-        fontColor.addEventListener('input', updatePreview);
-        textAlign.addEventListener('change', updatePreview);
-        direction.addEventListener('change', updatePreview);
-        letterSpacing.addEventListener('input', updatePreview);
-        lineHeight.addEventListener('input', updatePreview);
-        artStyle.addEventListener('change', updatePreview);
-        fitMode.addEventListener('change', updateFitMode);
-        zoomInBtn.addEventListener('click', () => updateZoom(10));
-        zoomOutBtn.addEventListener('click', () => updateZoom(-10));
-        zoomResetBtn.addEventListener('click', () => {
-            currentZoom = 100;
-            zoomLevel.textContent = '100%';
-            currentZoom = 100;
-            applyZoom();
-        });
-
-        // 初始化
-        updateTextPosition();
-        updatePreview();
-    </script>
+        const link = document.createElement('a');
+        link.download = 'preview-' + Date.now() + '.png';
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    }
+</script>
 </body>
 </html>
