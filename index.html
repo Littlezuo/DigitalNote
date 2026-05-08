@@ -323,6 +323,24 @@
             left: 50%;
             top: 50%;
             transform: translate(-50%, -50%);
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+
+        .preview-text:hover {
+            border-color: rgba(102, 126, 234, 0.6);
+        }
+
+        .preview-text.active {
+            border: 2px dashed #667eea;
+        }
+
+        .preview-text .resize-handle.text-resize {
+            display: none;
+        }
+
+        .preview-text.active .resize-handle.text-resize {
+            display: block;
         }
 
         .preview-text.dragging {
@@ -761,7 +779,12 @@
                     <img class="preview-bg-img" id="bgImg" src="" alt="背景图" style="display:none">
                     <div class="preview-text-overlay" id="textOverlay">
                         <div class="preview-text wordart-gradient-gold" id="previewText">春风得意马蹄疾
-一日看尽长安花</div>
+一日看尽长安花
+                            <div class="resize-handle text-resize nw" data-dir="nw"></div>
+                            <div class="resize-handle text-resize ne" data-dir="ne"></div>
+                            <div class="resize-handle text-resize sw" data-dir="sw"></div>
+                            <div class="resize-handle text-resize se" data-dir="se"></div>
+                        </div>
                         <div class="preview-logo" id="previewLogo">
                             <img id="logoImg" src="" alt="LOGO">
                             <div class="resize-handle nw" data-dir="nw"></div>
@@ -904,7 +927,8 @@
             document.getElementById('lineHeightVal').textContent = lineHeight.value;
 
             const artClass = artStyle.value;
-            previewText.className = 'preview-text ' + artClass;
+            const isActive = previewText.classList.contains('active');
+            previewText.className = 'preview-text ' + artClass + (isActive ? ' active' : '');
 
             if (artClass === 'wordart-none') {
                 previewText.style.color = fontColor.value;
@@ -921,6 +945,7 @@
             }
 
             updateTextPosition();
+            reattachTextResizeHandles();
         }
 
         // === Logo 上传 ===
@@ -964,13 +989,16 @@
             if (!previewLogo.contains(e.target)) {
                 previewLogo.classList.remove('active');
             }
+            if (!previewText.contains(e.target)) {
+                previewText.classList.remove('active');
+            }
         });
 
         // === Logo 缩放手柄 ===
         let isResizing = false;
         let resizeStartX, resizeStartY, resizeStartW, resizeStartH;
 
-        document.querySelectorAll('.resize-handle').forEach(handle => {
+        document.querySelectorAll('.preview-logo > .resize-handle').forEach(handle => {
             handle.addEventListener('mousedown', (e) => {
                 e.stopPropagation();
                 e.preventDefault();
@@ -1027,8 +1055,76 @@
             previewText.classList.remove('dragging');
         }
 
-        previewText.addEventListener('mousedown', (e) => { startTextDrag(e.clientX, e.clientY); e.preventDefault(); });
-        previewText.addEventListener('touchstart', (e) => { startTextDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, { passive: false });
+        // === 文字 active 状态切换 ===
+        previewText.addEventListener('click', (e) => {
+            if (e.target.classList.contains('resize-handle')) return;
+            previewText.classList.toggle('active');
+        });
+
+        // === 文字缩放手柄 ===
+        let isTextResizing = false;
+        let textResizeStartX, textResizeStartY, textResizeStartFontSize;
+
+        // 因为 updatePreview 使用 textContent 会清除子元素，需要重新插入手柄
+        function reattachTextResizeHandles() {
+            const dirs = ['nw', 'ne', 'sw', 'se'];
+            dirs.forEach(dir => {
+                let handle = previewText.querySelector('.text-resize.' + dir);
+                if (!handle) {
+                    handle = document.createElement('div');
+                    handle.className = 'resize-handle text-resize ' + dir;
+                    handle.dataset.dir = dir;
+                    previewText.appendChild(handle);
+                    bindTextResizeHandle(handle);
+                }
+            });
+        }
+
+        function bindTextResizeHandle(handle) {
+            handle.addEventListener('mousedown', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                startTextResize(e.clientX, e.clientY);
+            });
+            handle.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                startTextResize(e.touches[0].clientX, e.touches[0].clientY);
+            }, { passive: false });
+        }
+
+        function startTextResize(x, y) {
+            isTextResizing = true;
+            textResizeStartX = x;
+            textResizeStartY = y;
+            textResizeStartFontSize = parseInt(fontSize.value);
+        }
+
+        function moveTextResize(x, y) {
+            if (!isTextResizing) return;
+            const dx = x - textResizeStartX;
+            const dy = y - textResizeStartY;
+            const delta = (dx + dy) / 2;
+            const newSize = Math.max(12, Math.min(200, textResizeStartFontSize + delta));
+            fontSize.value = Math.round(newSize);
+            previewText.style.fontSize = Math.round(newSize) + 'px';
+        }
+
+        function endTextResize() {
+            isTextResizing = false;
+        }
+
+        // 初始化绑定已有手柄
+        document.querySelectorAll('.text-resize').forEach(bindTextResizeHandle);
+
+        previewText.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('resize-handle')) return;
+            startTextDrag(e.clientX, e.clientY); e.preventDefault();
+        });
+        previewText.addEventListener('touchstart', (e) => {
+            if (e.target.classList.contains('resize-handle')) return;
+            startTextDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault();
+        }, { passive: false });
 
         // === 拖拽：Logo ===
         function startLogoDrag(x, y) {
@@ -1063,19 +1159,20 @@
         }, { passive: false });
 
         // === 全局 move/end ===
-        document.addEventListener('mousemove', (e) => { moveTextDrag(e.clientX, e.clientY); moveLogoDrag(e.clientX, e.clientY); moveResize(e.clientX, e.clientY); });
-        document.addEventListener('mouseup', () => { endTextDrag(); endLogoDrag(); endResize(); });
+        document.addEventListener('mousemove', (e) => { moveTextDrag(e.clientX, e.clientY); moveLogoDrag(e.clientX, e.clientY); moveResize(e.clientX, e.clientY); moveTextResize(e.clientX, e.clientY); });
+        document.addEventListener('mouseup', () => { endTextDrag(); endLogoDrag(); endResize(); endTextResize(); });
         document.addEventListener('touchmove', (e) => {
             const t = e.touches[0];
             moveTextDrag(t.clientX, t.clientY);
             moveLogoDrag(t.clientX, t.clientY);
             moveResize(t.clientX, t.clientY);
+            moveTextResize(t.clientX, t.clientY);
             // 拖拽或缩放时阻止页面滚动
-            if (isTextDragging || isLogoDragging || isResizing) {
+            if (isTextDragging || isLogoDragging || isResizing || isTextResizing) {
                 e.preventDefault();
             }
         }, { passive: false });
-        document.addEventListener('touchend', () => { endTextDrag(); endLogoDrag(); endResize(); });
+        document.addEventListener('touchend', () => { endTextDrag(); endLogoDrag(); endResize(); endTextResize(); });
 
         // === 事件绑定 ===
         textInput.addEventListener('input', updatePreview);
