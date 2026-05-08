@@ -554,20 +554,24 @@
 
             .preview-area {
                 border-radius: 0 0 12px 12px;
-                max-height: 55vh;
+                max-height: 80vh;
             }
 
             .preview-bg-wrapper {
-                max-height: 55vh;
+                max-height: 80vh;
             }
 
             .fit-contain .preview-bg-img {
-                max-height: 55vh;
+                max-height: 80vh;
             }
 
             .fit-cover .preview-bg-img,
             .fit-fill .preview-bg-img {
-                height: 55vh;
+                height: 80vh;
+            }
+
+            .preview-bg-default {
+                padding-bottom: 80%;
             }
 
             .preview-text {
@@ -586,6 +590,17 @@
             .section-title {
                 margin: 10px 0 6px;
             }
+
+            /* 移动端 Logo 缩放手柄放大，方便触摸 */
+            .resize-handle {
+                width: 24px;
+                height: 24px;
+            }
+
+            .resize-handle.nw { top: -12px; left: -12px; }
+            .resize-handle.ne { top: -12px; right: -12px; }
+            .resize-handle.sw { bottom: -12px; left: -12px; }
+            .resize-handle.se { bottom: -12px; right: -12px; }
         }
 
         @media (max-width: 480px) {
@@ -1038,8 +1053,14 @@
             previewLogo.classList.remove('dragging');
         }
 
-        previewLogo.addEventListener('mousedown', (e) => { startLogoDrag(e.clientX, e.clientY); e.preventDefault(); });
-        previewLogo.addEventListener('touchstart', (e) => { startLogoDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, { passive: false });
+        previewLogo.addEventListener('mousedown', (e) => {
+            if (e.target.classList.contains('resize-handle')) return;
+            startLogoDrag(e.clientX, e.clientY); e.preventDefault();
+        });
+        previewLogo.addEventListener('touchstart', (e) => {
+            if (e.target.classList.contains('resize-handle')) return;
+            startLogoDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault();
+        }, { passive: false });
 
         // === 全局 move/end ===
         document.addEventListener('mousemove', (e) => { moveTextDrag(e.clientX, e.clientY); moveLogoDrag(e.clientX, e.clientY); moveResize(e.clientX, e.clientY); });
@@ -1049,7 +1070,11 @@
             moveTextDrag(t.clientX, t.clientY);
             moveLogoDrag(t.clientX, t.clientY);
             moveResize(t.clientX, t.clientY);
-        }, { passive: true });
+            // 拖拽或缩放时阻止页面滚动
+            if (isTextDragging || isLogoDragging || isResizing) {
+                e.preventDefault();
+            }
+        }, { passive: false });
         document.addEventListener('touchend', () => { endTextDrag(); endLogoDrag(); endResize(); });
 
         // === 事件绑定 ===
