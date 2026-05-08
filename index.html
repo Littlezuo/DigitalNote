@@ -254,14 +254,24 @@
             max-height: calc(100vh - 100px);
         }
 
-        .preview-bg-wrapper {
+        .preview-zoom-container {
             width: 100%;
             max-height: calc(100vh - 100px);
+            overflow: auto;
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+        }
+
+        .preview-bg-wrapper {
+            width: 100%;
+            flex-shrink: 0;
             position: relative;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
+            transform-origin: top center;
         }
 
         .preview-bg-img {
@@ -572,10 +582,9 @@
 
             .preview-area {
                 border-radius: 0 0 12px 12px;
-                max-height: 80vh;
             }
 
-            .preview-bg-wrapper {
+            .preview-zoom-container {
                 max-height: 80vh;
             }
 
@@ -627,9 +636,9 @@
             }
 
             .zoom-controls button {
-                width: 24px;
-                height: 24px;
-                font-size: 13px;
+                width: 32px;
+                height: 32px;
+                font-size: 15px;
             }
 
             .preview-header h2 {
@@ -774,6 +783,7 @@
                 </div>
             </div>
             <div class="preview-area" id="previewArea">
+                <div class="preview-zoom-container" id="zoomContainer">
                 <div class="preview-bg-wrapper fit-contain" id="bgWrapper">
                     <div class="preview-bg-default" id="bgDefault"></div>
                     <img class="preview-bg-img" id="bgImg" src="" alt="背景图" style="display:none">
@@ -793,7 +803,8 @@
                             <div class="resize-handle se" data-dir="se"></div>
                         </div>
                     </div>
-                </div>
+                </div><!-- /bgWrapper -->
+                </div><!-- /zoomContainer -->
                 <div class="drag-hint">拖拽文字/LOGO可调整位置</div>
             </div>
         </div>
@@ -819,6 +830,7 @@
         const zoomOutBtn = document.getElementById('zoomOut');
         const zoomResetBtn = document.getElementById('zoomReset');
         const zoomLevel = document.getElementById('zoomLevel');
+        const zoomContainer = document.getElementById('zoomContainer');
 
         const logoInput = document.getElementById('logoInput');
         const logoUploadText = document.getElementById('logoUploadText');
@@ -833,6 +845,15 @@
         const bgRemoveBtn = document.getElementById('bgRemoveBtn');
 
         let currentZoom = 100;
+
+        function applyZoom() {
+            const scale = currentZoom / 100;
+            bgWrapper.style.transform = 'scale(' + scale + ')';
+            bgWrapper.style.transformOrigin = 'top center';
+            // 缩放后调整容器高度，避免内容被裁切或留白过多
+            const naturalH = bgWrapper.offsetHeight;
+            zoomContainer.style.height = (naturalH * scale) + 'px';
+        }
 
         // 文字拖拽
         let isTextDragging = false;
@@ -889,7 +910,7 @@
         function updateZoom(delta) {
             currentZoom = Math.max(50, Math.min(200, currentZoom + delta));
             zoomLevel.textContent = currentZoom + '%';
-            bgImg.style.transform = 'scale(' + (currentZoom / 100) + ')';
+            applyZoom();
         }
 
         function updateFitMode() {
@@ -1190,7 +1211,8 @@
         zoomResetBtn.addEventListener('click', () => {
             currentZoom = 100;
             zoomLevel.textContent = '100%';
-            bgImg.style.transform = 'scale(1)';
+            currentZoom = 100;
+            applyZoom();
         });
 
         // 初始化
