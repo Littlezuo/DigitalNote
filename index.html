@@ -320,6 +320,50 @@
 
         .btn-remove:hover { background: #ffd6de; }
 
+        /* ── 抠图按钮组 ── */
+        .cutout-btn-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .btn-cutout {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            width: 100%;
+            padding: 7px;
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: #faf9ff;
+            color: var(--text-main);
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+        }
+
+        .btn-cutout:hover { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+
+        .btn-cutout-undo {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 6px;
+            border: 1px dashed var(--border);
+            border-radius: var(--radius-sm);
+            background: transparent;
+            color: var(--text-sub);
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: color 0.2s, border-color 0.2s;
+        }
+
+        .btn-cutout-undo:hover { color: var(--primary); border-color: var(--primary); }
+
         /* ── 右侧预览面板 ── */
         .preview-panel {
             display: flex;
@@ -771,6 +815,49 @@
                 <input type="range" id="logoSize" min="30" max="300" value="80" step="5">
             </div>
 
+            <!-- 抠图控制组 -->
+            <div id="cutoutGroup" style="display:none">
+                <div class="section-label" style="margin-top:8px">图标抠图</div>
+
+                <div class="form-item">
+                    <label>容差 <span class="val-badge" id="cutoutToleranceVal">30</span></label>
+                    <input type="range" id="cutoutTolerance" min="0" max="100" value="30" step="1">
+                </div>
+
+                <div class="form-item">
+                    <div class="cutout-btn-row">
+                        <button class="btn-cutout" id="btnRemoveWhite" title="一键去除白色背景">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2" fill="#fff" stroke="#ccc"/></svg>
+                            去白底
+                        </button>
+                        <button class="btn-cutout" id="btnRemoveBlack" title="一键去除黑色背景">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2" fill="#333" stroke="#666"/></svg>
+                            去黑底
+                        </button>
+                    </div>
+                    <div class="cutout-btn-row" style="margin-top:6px;grid-template-columns:1fr 1fr 1fr;gap:6px">
+                        <button class="btn-cutout" id="btnRemoveRed" title="一键去除红色背景">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2" fill="#f44336" stroke="#d32f2f"/></svg>
+                            去红底
+                        </button>
+                        <button class="btn-cutout" id="btnRemoveGreen" title="一键去除绿色背景">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2" fill="#4caf50" stroke="#388e3c"/></svg>
+                            去绿底
+                        </button>
+                        <button class="btn-cutout" id="btnRemoveBlue" title="一键去除蓝色背景">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2" fill="#2196f3" stroke="#1976d2"/></svg>
+                            去蓝底
+                        </button>
+                    </div>
+                </div>
+
+                <div class="form-item">
+                    <button class="btn-cutout-undo" id="btnUndoCutout" title="撤销抠图，恢复原图">
+                        ↩ 撤销抠图
+                    </button>
+                </div>
+            </div>
+
             <div class="section-label">背景</div>
 
             <div class="form-item">
@@ -877,6 +964,19 @@
     const bgInput      = document.getElementById('bgInput');
     const bgUploadText = document.getElementById('bgUploadText');
     const bgRemoveBtn  = document.getElementById('bgRemoveBtn');
+
+    // 抠图相关元素
+    const cutoutGroup        = document.getElementById('cutoutGroup');
+    const cutoutTolerance    = document.getElementById('cutoutTolerance');
+    const cutoutToleranceVal = document.getElementById('cutoutToleranceVal');
+    const btnRemoveWhite     = document.getElementById('btnRemoveWhite');
+    const btnRemoveBlack     = document.getElementById('btnRemoveBlack');
+    const btnRemoveRed       = document.getElementById('btnRemoveRed');
+    const btnRemoveGreen     = document.getElementById('btnRemoveGreen');
+    const btnRemoveBlue      = document.getElementById('btnRemoveBlue');
+    const btnUndoCutout      = document.getElementById('btnUndoCutout');
+
+    let originalLogoDataUrl = '';  // 保存原始 LOGO 数据，用于撤销
 
     let currentZoom = 100;
 
@@ -1004,9 +1104,11 @@
         const reader = new FileReader();
         reader.onload = (ev) => {
             logoImg.src = ev.target.result;
+            originalLogoDataUrl = ev.target.result; // 保存原图用于撤销
             previewLogo.style.display = 'block';
             logoRemoveBtn.style.display = 'block';
             logoSizeGroup.style.display = 'block';
+            cutoutGroup.style.display = 'block';     // 显示抠图面板
             logoUploadText.textContent = '重新上传 LOGO';
             updateLogoSize();
             updateLogoPosition();
@@ -1017,15 +1119,117 @@
 
     logoRemoveBtn.addEventListener('click', () => {
         logoImg.src = '';
+        originalLogoDataUrl = '';
         previewLogo.style.display = 'none';
         previewLogo.classList.remove('active');
         logoRemoveBtn.style.display = 'none';
         logoSizeGroup.style.display = 'none';
+        cutoutGroup.style.display = 'none';          // 隐藏抠图面板
         logoUploadText.textContent = '点击上传 LOGO';
         logoInput.value = '';
     });
 
     logoSize.addEventListener('input', updateLogoSize);
+
+    // ══════════════════════════════
+    // 抠图功能
+    // ══════════════════════════════
+    cutoutTolerance.addEventListener('input', () => {
+        cutoutToleranceVal.textContent = cutoutTolerance.value;
+    });
+
+    // 核心抠图：将指定颜色及容差范围内的像素设为透明
+    function performCutout(targetR, targetG, targetB) {
+        if (!logoImg.src) return;
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        const img = new Image();
+        img.onload = () => {
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            ctx.drawImage(img, 0, 0);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+            const tolerance = parseInt(cutoutTolerance.value);
+            const tolSq = tolerance * tolerance; // 用平方避免开方
+
+            for (let i = 0; i < data.length; i += 4) {
+                const dr = data[i] - targetR;
+                const dg = data[i + 1] - targetG;
+                const db = data[i + 2] - targetB;
+                const distSq = dr * dr + dg * dg + db * db;
+                if (distSq <= tolerance * tolerance * 9) { // 扩大匹配范围，容差30时约覆盖RGB距离90
+                    data[i + 3] = 0; // 设为透明
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+            logoImg.src = canvas.toDataURL('image/png');
+        };
+        img.src = logoImg.src;
+    }
+
+    // 去白底
+    btnRemoveWhite.addEventListener('click', () => {
+        performCutout(255, 255, 255);
+    });
+
+    // 去黑底
+    btnRemoveBlack.addEventListener('click', () => {
+        performCutout(0, 0, 0);
+    });
+
+    // 去红底
+    btnRemoveRed.addEventListener('click', () => {
+        performCutout(220, 40, 40);
+    });
+
+    // 去绿底
+    btnRemoveGreen.addEventListener('click', () => {
+        performCutout(0, 177, 64);
+    });
+
+    // 去蓝底
+    btnRemoveBlue.addEventListener('click', () => {
+        performCutout(30, 80, 220);
+    });
+
+    // 直接在 LOGO 上点击取色抠图
+    logoImg.addEventListener('click', (e) => {
+        if (!logoImg.src) return;
+        e.stopPropagation();
+
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = img.naturalWidth;
+            canvas.height = img.naturalHeight;
+            ctx.drawImage(img, 0, 0);
+
+            // 将点击位置映射到原图坐标
+            const rect = logoImg.getBoundingClientRect();
+            const scaleX = img.naturalWidth / rect.width;
+            const scaleY = img.naturalHeight / rect.height;
+            const px = Math.floor((e.clientX - rect.left) * scaleX);
+            const py = Math.floor((e.clientY - rect.top) * scaleY);
+
+            if (px >= 0 && px < img.naturalWidth && py >= 0 && py < img.naturalHeight) {
+                const pixel = ctx.getImageData(px, py, 1, 1).data;
+                performCutout(pixel[0], pixel[1], pixel[2]);
+            }
+        };
+        img.src = logoImg.src;
+    });
+
+    // 撤销抠图
+    btnUndoCutout.addEventListener('click', () => {
+        if (originalLogoDataUrl) {
+            logoImg.src = originalLogoDataUrl;
+        }
+    });
 
     previewLogo.addEventListener('click', (e) => {
         if (e.target.classList.contains('resize-handle')) return;
